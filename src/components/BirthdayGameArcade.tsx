@@ -98,6 +98,12 @@ interface WordPuzzle {
 
 const WORD_PUZZLES: WordPuzzle[] = [
   {
+    word: 'ATRAYEE',
+    category: 'The Birthday Star',
+    clue: 'The most extraordinary, radiant birthday girl in the entire universe.',
+    sweetNote: 'Happy Birthday, Atrayee! Every single part of this celebration was made for you.',
+  },
+  {
     word: 'SOULMATE',
     category: 'Destiny & Devotion',
     clue: 'The one person in the universe whose heart beats in rhythm with yours.',

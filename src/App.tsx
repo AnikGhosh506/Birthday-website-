@@ -36,7 +36,14 @@ export default function App() {
       try {
         const saved = localStorage.getItem('amore_birthday_data');
         if (saved) {
-          return { ...DEFAULT_BIRTHDAY_DATA, ...JSON.parse(saved) };
+          const parsed = JSON.parse(saved);
+          if (parsed.girlfriendName === 'Maya') {
+            parsed.girlfriendName = 'Atrayee';
+          }
+          if (parsed.heroHeadline === 'Happy Birthday, My Love') {
+            parsed.heroHeadline = 'Happy Birthday, Atrayee';
+          }
+          return { ...DEFAULT_BIRTHDAY_DATA, ...parsed };
         }
       } catch (err) {
         console.error('Failed to read localStorage data', err);

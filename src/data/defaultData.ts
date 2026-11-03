@@ -1,13 +1,13 @@
 import { PersonalizationData } from '../types';
 
 export const DEFAULT_BIRTHDAY_DATA: PersonalizationData = {
-  girlfriendName: "Maya",
+  girlfriendName: "Atrayee",
   nickname: "My Sunshine",
   boyfriendName: "Julian",
   birthdayDate: "2026-10-26",
   anniversaryDate: "2023-04-14",
   heroKicker: "To the most extraordinary soul in the universe",
-  heroHeadline: "Happy Birthday, My Love",
+  heroHeadline: "Happy Birthday, Atrayee",
   heroMessage: "Today marks the day the world was blessed with you. Thank you for filling my days with warmth, quiet laughter, and endless adventure. Here is a little corner of the internet dedicated entirely to celebrating you.",
   secretWishMessage: "May every dream you hold close in your heart whisper back to you this year. I promise to stand beside you, cheer for you, and love you more fiercely with every sunrise.",
   memories: [
@@ -100,7 +100,7 @@ export const DEFAULT_BIRTHDAY_DATA: PersonalizationData = {
       title: "Open when you doubt how beautiful you are ✨",
       subtitle: "The truth as I see it every day",
       openWhen: "On days you are being too hard on yourself",
-      content: `Dearest Maya,\n\nI wish you could see yourself through my eyes for just five seconds. You would never doubt your radiance ever again.\n\nI see your beauty in the quietest, most unguarded moments: when you're laughing so hard your nose crinkles, when you're deeply lost in thought, when you're dancing around the room in oversized pajamas, and when your eyes light up talking about things you love.\n\nYou have a beauty that transcends surfaces—it's in your kindness, your empathy, and the softness you give to people around you. You are breathtaking.`,
+      content: `Dearest Atrayee,\n\nI wish you could see yourself through my eyes for just five seconds. You would never doubt your radiance ever again.\n\nI see your beauty in the quietest, most unguarded moments: when you're laughing so hard your nose crinkles, when you're deeply lost in thought, when you're dancing around the room in oversized pajamas, and when your eyes light up talking about things you love.\n\nYou have a beauty that transcends surfaces—it's in your kindness, your empathy, and the softness you give to people around you. You are breathtaking.`,
       signOff: "Eternally captivated by you"
     },
     {
