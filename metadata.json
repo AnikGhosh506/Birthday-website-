@@ -1,0 +1,6 @@
+{
+  "name": "Amore - Personalized Birthday Keepsake",
+  "description": "An interactive, heartfelt birthday celebration website crafted with love, featuring personalized memories, interactive candle blowout, love letters, custom coupons, and romantic music.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
