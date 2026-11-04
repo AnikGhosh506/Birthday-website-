@@ -58,11 +58,11 @@ export const Footer: React.FC<FooterProps> = ({
 
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-400 font-sans">
           <div className="flex items-center gap-1.5">
-            <span>Crafted with devotion by</span>
-            <span className="font-semibold text-stone-700">{boyfriendName || 'Julian'}</span>
+            <span>Crafted with sibling love by</span>
+            <span className="font-semibold text-stone-700">{boyfriendName || 'Arpita'}</span>
             <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
-            <span>for</span>
-            <span className="font-semibold text-stone-700">{girlfriendName || 'Maya'}</span>
+            <span>for big sister</span>
+            <span className="font-semibold text-stone-700">{girlfriendName || 'Atrayee'}</span>
           </div>
 
           <button

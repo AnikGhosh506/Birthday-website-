@@ -37,11 +37,10 @@ export default function App() {
         const saved = localStorage.getItem('amore_birthday_data');
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed.girlfriendName === 'Maya') {
-            parsed.girlfriendName = 'Atrayee';
-          }
-          if (parsed.heroHeadline === 'Happy Birthday, My Love') {
-            parsed.heroHeadline = 'Happy Birthday, Atrayee';
+          // If localStorage still holds the old romantic template ("Julian" or "My Sunshine"), refresh to Older Sister defaults
+          if (parsed.boyfriendName === 'Julian' || parsed.nickname === 'My Sunshine') {
+            localStorage.setItem('amore_birthday_data', JSON.stringify(DEFAULT_BIRTHDAY_DATA));
+            return DEFAULT_BIRTHDAY_DATA;
           }
           return { ...DEFAULT_BIRTHDAY_DATA, ...parsed };
         }
@@ -67,7 +66,7 @@ export default function App() {
   };
 
   const handleResetData = () => {
-    if (window.confirm('Reset all details, messages, and memories to default romantic templates?')) {
+    if (window.confirm('Reset all details, messages, and memories to the default sisterhood birthday template?')) {
       setData(DEFAULT_BIRTHDAY_DATA);
       try {
         localStorage.removeItem('amore_birthday_data');
@@ -102,11 +101,11 @@ export default function App() {
     if (hasBonusCoupon) return;
     const bonusCoupon: LoveCoupon = {
       id: 'arcade-golden-prize',
-      title: '★ Golden Arcade Champion Wish',
+      title: '★ Golden Arcade Queen Sis Pass',
       description:
-        'Unlocked in the Birthday Game Arcade! Good for one spontaneous weekend getaway or dream date night of your choice, planned down to the last detail.',
-      category: 'Dream Adventure',
-      code: 'ARCADE-CHAMPION-VIP',
+        'Unlocked in the Birthday Game Arcade! Good for one ultimate Sister Day Out—your choice of restaurant, dessert spot, or shopping treat, 100% sponsored!',
+      category: 'pampering',
+      icon: 'sparkles',
       isRedeemed: false,
     };
     handleSaveData({

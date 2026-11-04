@@ -97,10 +97,10 @@ export const VouchersSection: React.FC<VouchersSectionProps> = ({
               <span>No Expiration Date</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900">
-              Birthday Love Vouchers
+              Sisterhood Birthday Vouchers
             </h2>
             <p className="mt-2 text-sm sm:text-base text-stone-600 font-sans max-w-xl">
-              Special perks redeemable anytime you wish. Non-transferable, unconditionally backed by me.
+              Special big-sister perks redeemable anytime you wish—coffee runs, errands, movie nights, and sibling debate free passes!
             </p>
           </div>
 

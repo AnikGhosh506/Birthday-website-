@@ -47,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             href="#letters"
             className="hover:text-stone-950 hover:underline underline-offset-4 transition-colors whitespace-nowrap shrink-0"
           >
-            Love Letters
+            Sister Letters
           </a>
           <a
             href="#vouchers"

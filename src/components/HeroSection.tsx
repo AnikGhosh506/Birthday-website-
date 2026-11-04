@@ -42,13 +42,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
   const daysTogether = calculateDaysTogether();
 
-  // Format birthday date nicely
+  // Format birthday date nicely without UTC timezone shift
   const formatBirthday = (dateStr: string) => {
     try {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const d = new Date(year, month - 1, day);
+        return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+      }
       const d = new Date(dateStr);
-      return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
     } catch {
-      return dateStr;
+      return 'May 28';
     }
   };
 
@@ -63,7 +68,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <div className="flex items-center gap-2 text-xs font-semibold text-rose-800 uppercase tracking-widest mb-4">
               <span>{heroKicker || 'A Special Day'}</span>
               <span aria-hidden="true">·</span>
-              <span>{formatBirthday(birthdayDate)}</span>
+              <span>{formatBirthday(birthdayDate)} Celebration</span>
             </div>
 
             {/* Display Headline */}
@@ -103,7 +108,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 className="px-5 py-3 text-sm font-medium text-stone-800 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors shadow-xs inline-flex items-center gap-2 whitespace-nowrap shrink-0"
               >
                 <Heart className="w-4 h-4 text-rose-600" />
-                <span>Open Love Letters</span>
+                <span>Open Sister Letters</span>
               </a>
 
               {onToggleMusic && (
@@ -128,9 +133,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
             {/* Quiet metadata line */}
             <div className="mt-6 flex items-center gap-2 text-xs text-stone-500">
-              <span>Dedicated with endless love</span>
+              <span>Celebrated with endless sibling pride</span>
               <span aria-hidden="true">·</span>
-              <span>Always {nickname || 'My Favorite Soul'}</span>
+              <span>Always {nickname || 'Best Big Sis'}</span>
             </div>
           </div>
 
@@ -144,50 +149,50 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
         </div>
 
-        {/* 4-Column KPI / Relationship Milestones Strip (Full-width row below hero split) */}
+        {/* 4-Column KPI / Sisterhood Milestones Strip (Full-width row below hero split) */}
         <div className="mt-14 pt-8 border-t border-stone-200/80 grid grid-cols-2 md:grid-cols-4 gap-6">
           <div className="p-4 rounded-xl bg-white border border-stone-200/70 shadow-xs">
-            <span className="text-xs text-stone-500 font-medium">Days We've Loved Each Other</span>
-            <div className="mt-1 flex items-baseline gap-1">
+            <span className="text-xs text-stone-500 font-medium">{girlfriendName}'s Special Day</span>
+            <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-2xl font-serif font-bold text-stone-900 tabular-nums">
-                {daysTogether}
+                {formatBirthday(birthdayDate)}
               </span>
-              <span className="text-xs text-rose-600 font-medium">days</span>
+              <span className="text-xs text-rose-600 font-medium">28th May</span>
             </div>
-            <p className="text-[11px] text-stone-400 mt-0.5">And counting every second</p>
+            <p className="text-[11px] text-stone-400 mt-0.5">The day the best big sister was born</p>
           </div>
 
           <div className="p-4 rounded-xl bg-white border border-stone-200/70 shadow-xs">
-            <span className="text-xs text-stone-500 font-medium">Adventures & Date Nights</span>
-            <div className="mt-1 flex items-baseline gap-1">
+            <span className="text-xs text-stone-500 font-medium">Built-In Best Friend</span>
+            <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-2xl font-serif font-bold text-stone-900 tabular-nums">
-                100+
+                Lifetime
+              </span>
+              <span className="text-xs text-rose-600 font-medium">bond</span>
+            </div>
+            <p className="text-[11px] text-stone-400 mt-0.5">Protector, guide & partner in crime</p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white border border-stone-200/70 shadow-xs">
+            <span className="text-xs text-stone-500 font-medium">Inside Jokes & Late Talks</span>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-2xl font-serif font-bold text-stone-900 tabular-nums">
+                1,000+
               </span>
               <span className="text-xs text-stone-500 font-medium">shared</span>
             </div>
-            <p className="text-[11px] text-stone-400 mt-0.5">From cafes to mountain sunsets</p>
+            <p className="text-[11px] text-stone-400 mt-0.5">From childhood secrets to midnight snacks</p>
           </div>
 
           <div className="p-4 rounded-xl bg-white border border-stone-200/70 shadow-xs">
-            <span className="text-xs text-stone-500 font-medium">Inside Jokes & Laughter</span>
-            <div className="mt-1 flex items-baseline gap-1">
-              <span className="text-2xl font-serif font-bold text-stone-900 tabular-nums">
-                ∞
-              </span>
-              <span className="text-xs text-rose-600 font-medium">limitless</span>
-            </div>
-            <p className="text-[11px] text-stone-400 mt-0.5">The prettiest sound on Earth</p>
-          </div>
-
-          <div className="p-4 rounded-xl bg-white border border-stone-200/70 shadow-xs">
-            <span className="text-xs text-stone-500 font-medium">Forever Guarantee</span>
-            <div className="mt-1 flex items-baseline gap-1">
+            <span className="text-xs text-stone-500 font-medium">Big Sister Rating</span>
+            <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-2xl font-serif font-bold text-stone-900 tabular-nums">
                 100%
               </span>
-              <span className="text-xs text-rose-600 font-medium">devotion</span>
+              <span className="text-xs text-rose-600 font-medium">iconic</span>
             </div>
-            <p className="text-[11px] text-stone-400 mt-0.5">Today, tomorrow, always</p>
+            <p className="text-[11px] text-stone-400 mt-0.5">Couldn't ask for a cooler older sister</p>
           </div>
         </div>
       </div>

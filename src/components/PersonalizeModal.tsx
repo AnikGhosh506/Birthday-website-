@@ -128,42 +128,42 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1">
-                    Girlfriend's Name
+                    Sister's Name
                   </label>
                   <input
                     type="text"
                     value={formData.girlfriendName}
                     onChange={(e) => handleTextChange('girlfriendName', e.target.value)}
                     className="w-full px-3.5 py-2 text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-stone-900 focus:ring-1 focus:ring-stone-900"
-                    placeholder="e.g. Maya"
+                    placeholder="e.g. Atrayee"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1">
-                    Her Pet Nickname
+                    Her Title / Nickname
                   </label>
                   <input
                     type="text"
                     value={formData.nickname}
                     onChange={(e) => handleTextChange('nickname', e.target.value)}
                     className="w-full px-3.5 py-2 text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-stone-900 focus:ring-1 focus:ring-stone-900"
-                    placeholder="e.g. My Sunshine"
+                    placeholder="e.g. Best Big Sis"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1">
-                    Your Name
+                    Your Name (From Sibling)
                   </label>
                   <input
                     type="text"
                     value={formData.boyfriendName}
                     onChange={(e) => handleTextChange('boyfriendName', e.target.value)}
                     className="w-full px-3.5 py-2 text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-stone-900 focus:ring-1 focus:ring-stone-900"
-                    placeholder="e.g. Julian"
+                    placeholder="e.g. Arpita"
                   />
                 </div>
 
@@ -175,18 +175,6 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
                     type="date"
                     value={formData.birthdayDate}
                     onChange={(e) => handleTextChange('birthdayDate', e.target.value)}
-                    className="w-full px-3.5 py-2 text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-stone-900 focus:ring-1 focus:ring-stone-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1">
-                    Anniversary / Met Date
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.anniversaryDate}
-                    onChange={(e) => handleTextChange('anniversaryDate', e.target.value)}
                     className="w-full px-3.5 py-2 text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-stone-900 focus:ring-1 focus:ring-stone-900"
                   />
                 </div>

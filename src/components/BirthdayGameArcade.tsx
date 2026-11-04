@@ -76,14 +76,14 @@ interface MemoryCard {
 }
 
 const MEMORY_PAIRS = [
-  { pairId: 'letter', title: 'Love Letter', symbol: '💌', subtitle: 'Sealed in wax', accentColor: '#e11d48' },
-  { pairId: 'cake', title: 'Birthday Cake', symbol: '🎂', subtitle: 'Make a wish', accentColor: '#d97706' },
-  { pairId: 'stars', title: 'Stargazing', symbol: '✨', subtitle: 'Midnight sky', accentColor: '#4f46e5' },
-  { pairId: 'coffee', title: 'Morning Cafe', symbol: '☕', subtitle: 'Two warm cups', accentColor: '#78350f' },
-  { pairId: 'rose', title: 'Red Bouquet', symbol: '🌹', subtitle: 'Freshly bloomed', accentColor: '#be123c' },
-  { pairId: 'camera', title: 'Polaroid Snap', symbol: '📸', subtitle: 'Captured moment', accentColor: '#0f766e' },
-  { pairId: 'vinyl', title: 'Our Song', symbol: '🎶', subtitle: 'Slow dancing', accentColor: '#6d28d9' },
-  { pairId: 'lantern', title: 'Sky Lantern', symbol: '🏮', subtitle: 'Floating wish', accentColor: '#ea580c' },
+  { pairId: 'cake', title: 'Birthday Cake', symbol: '🎂', subtitle: '28th May Wish', accentColor: '#d97706' },
+  { pairId: 'crown', title: 'Queen Big Sis', symbol: '👑', subtitle: 'Always iconic', accentColor: '#e11d48' },
+  { pairId: 'coffee', title: 'Iced Coffee Run', symbol: '☕', subtitle: 'Sister treat', accentColor: '#78350f' },
+  { pairId: 'camera', title: 'Sister Selfie', symbol: '📸', subtitle: 'Best angles', accentColor: '#0f766e' },
+  { pairId: 'shopping', title: 'Closet Raid', symbol: '🛍️', subtitle: 'Borrowed style', accentColor: '#be123c' },
+  { pairId: 'snacks', title: 'Midnight Snacks', symbol: '🍕', subtitle: 'Kitchen talks', accentColor: '#ea580c' },
+  { pairId: 'letter', title: 'Sister Note', symbol: '💌', subtitle: 'Partner in crime', accentColor: '#4f46e5' },
+  { pairId: 'gift', title: 'Birthday Surprise', symbol: '🎁', subtitle: 'For Atrayee', accentColor: '#6d28d9' },
 ];
 
 // ==========================================
@@ -99,45 +99,39 @@ interface WordPuzzle {
 const WORD_PUZZLES: WordPuzzle[] = [
   {
     word: 'ATRAYEE',
-    category: 'The Birthday Star',
-    clue: 'The most extraordinary, radiant birthday girl in the entire universe.',
-    sweetNote: 'Happy Birthday, Atrayee! Every single part of this celebration was made for you.',
+    category: 'The Birthday Star · 28th May',
+    clue: 'The coolest, wisest, and most extraordinary older sister in the universe.',
+    sweetNote: 'Happy Birthday, Atrayee! So grateful to have you as my big sister.',
   },
   {
-    word: 'SOULMATE',
-    category: 'Destiny & Devotion',
-    clue: 'The one person in the universe whose heart beats in rhythm with yours.',
-    sweetNote: 'From our very first conversation, my soul recognized yours.',
+    word: 'SISTERHOOD',
+    category: 'Lifetime Bond',
+    clue: 'A built-in lifelong friendship full of inside jokes, shared secrets, and unconditional support.',
+    sweetNote: 'Having you as my older sister is the best gift our family ever gave me.',
   },
   {
-    word: 'SERENADE',
-    category: 'Romantic Melody',
-    clue: 'A gentle song played under the stars just for someone adored.',
-    sweetNote: 'Every laugh we share is my favorite song in the world.',
+    word: 'ROLEMODEL',
+    category: 'Inspiration',
+    clue: 'Someone who leads the way with grace, courage, and wisdom for her younger sibling.',
+    sweetNote: 'I have looked up to you since we were kids, and I always will.',
   },
   {
-    word: 'CHERISH',
-    category: 'Promise',
-    clue: 'To hold someone dear and treasure every single moment together.',
-    sweetNote: 'I promise to treasure your smile today, tomorrow, and always.',
+    word: 'BESTFRIEND',
+    category: 'Partner in Crime',
+    clue: 'What an older sister naturally becomes when you grow up sharing every laugh together.',
+    sweetNote: 'No matter where life takes us, you will always be my first best friend.',
   },
   {
-    word: 'STARLIGHT',
-    category: 'Night Sky',
-    clue: 'The silver glow in the midnight sky that reminds me of your eyes.',
-    sweetNote: 'Even the brightest constellation pales next to you.',
+    word: 'LAUGHTER',
+    category: 'Everyday Magic',
+    clue: 'What happens immediately when we make eye contact across the room at family gatherings.',
+    sweetNote: 'Nobody makes me laugh as hard as you do, big sis!',
   },
   {
-    word: 'FOREVER',
-    category: 'Timeline',
-    clue: 'How long I want to keep making birthday memories with you.',
-    sweetNote: 'A hundred lifetimes with you still would not be enough.',
-  },
-  {
-    word: 'TREASURE',
-    category: 'Keepsake',
-    clue: 'Something rare, priceless, and irreplaceable—just like you.',
-    sweetNote: 'You are the greatest gift life has ever given me.',
+    word: 'CHAMPION',
+    category: 'Big Sis Energy',
+    clue: 'Someone who always has your back, defends you, and cheers for your biggest dreams.',
+    sweetNote: 'Thank you for always having my back through thick and thin!',
   },
 ];
 

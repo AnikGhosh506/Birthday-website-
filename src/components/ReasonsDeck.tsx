@@ -56,13 +56,13 @@ export const ReasonsDeck: React.FC<ReasonsDeckProps> = ({
           <div className="inline-flex items-center gap-2 text-xs font-semibold text-rose-800 uppercase tracking-widest mb-2">
             <span>Chapter 05</span>
             <span aria-hidden="true">·</span>
-            <span>Unspoken Little Things</span>
+            <span>Big Sister Appreciation</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900">
-            A Few Things I Adore About You
+            Why You're the Best Older Sister
           </h2>
           <p className="mt-2 text-sm sm:text-base text-stone-600 font-sans">
-            Out of the countless reasons why you're my favorite person in every lifetime.
+            Just a few of the countless reasons why I'm so lucky to have you as my big sis.
           </p>
         </div>
 

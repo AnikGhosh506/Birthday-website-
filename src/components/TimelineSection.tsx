@@ -84,13 +84,13 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
             <div className="flex items-center gap-2 text-xs font-semibold text-rose-800 uppercase tracking-widest mb-2">
               <span>Chapter 02</span>
               <span aria-hidden="true">·</span>
-              <span>Our Scrapbook</span>
+              <span>Sisterhood Scrapbook</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900">
-              The Journey We're Building Together
+              Our Favorite Sister Memories
             </h2>
             <p className="mt-2 text-sm sm:text-base text-stone-600 font-sans max-w-xl">
-              A collection of moments, road trips, and quiet ordinary days that mean everything to me.
+              From childhood adventures and borrowed outfits to late-night kitchen talks and lifelong support.
             </p>
           </div>
 

@@ -55,13 +55,13 @@ export const CoupleQuiz: React.FC<CoupleQuizProps> = ({
           <div className="inline-flex items-center gap-2 text-xs font-semibold text-rose-800 uppercase tracking-widest mb-2">
             <span>Chapter 06</span>
             <span aria-hidden="true">·</span>
-            <span>Memory Check</span>
+            <span>Sibling Trivia</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900">
-            How Well Do You Know Our Story?
+            The Ultimate Sisterhood Quiz
           </h2>
           <p className="mt-2 text-sm sm:text-base text-stone-600 font-sans">
-            A lighthearted trivia challenge just for the birthday girl.
+            A fun birthday trivia challenge made just for the world's coolest older sister.
           </p>
         </div>
 
