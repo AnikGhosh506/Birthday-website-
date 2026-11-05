@@ -28,6 +28,59 @@ function pickUniqueFiveFromPool(reloadIndex: number, fallbackQuiz: QuizQuestion[
   return selected;
 }
 
+function sanitizeAIQuestions(
+  rawList: unknown[],
+  fallbackSet: QuizQuestion[]
+): QuizQuestion[] {
+  const sanitized: QuizQuestion[] = [];
+  rawList.forEach((raw, idx) => {
+    if (!raw || typeof raw !== 'object') return;
+    const item = raw as Record<string, unknown>;
+    const qText = typeof item.question === 'string' ? item.question.trim() : '';
+    const rawOpts = Array.isArray(item.options) ? item.options : [];
+    const opts = rawOpts
+      .map((o) => (typeof o === 'string' ? o.trim() : String(o ?? '').trim()))
+      .filter((o) => o.length > 0)
+      .slice(0, 4);
+
+    if (!qText || opts.length < 4) return;
+
+    const rawCorrect = Number(item.correctIndex);
+    const correctIndex =
+      Number.isInteger(rawCorrect) && rawCorrect >= 0 && rawCorrect < 4
+        ? rawCorrect
+        : 0;
+    const explanation =
+      typeof item.explanation === 'string' && item.explanation.trim().length > 0
+        ? item.explanation.trim()
+        : fallbackSet[idx % fallbackSet.length]?.explanation ||
+          'Every sibling memory is special!';
+
+    sanitized.push({
+      id: `ai-q-${Date.now()}-${idx + 1}`,
+      question: qText,
+      options: opts,
+      correctIndex,
+      explanation,
+    });
+  });
+
+  // Fill any missing slots from fallbackSet if AI returned fewer than 5 valid items
+  let fillIdx = 0;
+  while (sanitized.length < 5 && fillIdx < fallbackSet.length) {
+    const candidate = fallbackSet[fillIdx];
+    if (!sanitized.some((s) => s.question === candidate.question)) {
+      sanitized.push({
+        ...candidate,
+        id: `ai-fallback-${Date.now()}-${sanitized.length + 1}`,
+      });
+    }
+    fillIdx++;
+  }
+
+  return sanitized.slice(0, 5);
+}
+
 export const CoupleQuiz: React.FC<CoupleQuizProps> = ({
   quiz,
   girlfriendName,
@@ -72,25 +125,30 @@ export const CoupleQuiz: React.FC<CoupleQuizProps> = ({
             ...seenQuestions.slice(-15),
             ...activeQuestions.map((q) => q.question),
           ],
+          reloadNonce: Date.now(),
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        if (Array.isArray(data.questions) && data.questions.length === 5) {
-          setActiveQuestions(data.questions);
-          setSelectedAnswers({});
-          setShowResults(false);
-          setAiBadgeText('Generated Live by Gemini Flash-Lite AI · 5 Unique Questions');
-          try {
-            const updatedSeen = [
-              ...seenQuestions,
-              ...data.questions.map((q: QuizQuestion) => q.question),
-            ].slice(-25);
-            sessionStorage.setItem(SEEN_QUESTIONS_KEY, JSON.stringify(updatedSeen));
-          } catch {}
-          setIsGeneratingAI(false);
-          return;
+        if (Array.isArray(data.questions) && data.questions.length > 0) {
+          const fallbackSlice = pickUniqueFiveFromPool(reloadBatchIndex + 1, quiz);
+          const cleanFive = sanitizeAIQuestions(data.questions, fallbackSlice);
+          if (cleanFive.length === 5) {
+            setActiveQuestions(cleanFive);
+            setSelectedAnswers({});
+            setShowResults(false);
+            setAiBadgeText('5 Unique AI Questions · Freshly Generated');
+            try {
+              const updatedSeen = [
+                ...seenQuestions,
+                ...cleanFive.map((q: QuizQuestion) => q.question),
+              ].slice(-25);
+              sessionStorage.setItem(SEEN_QUESTIONS_KEY, JSON.stringify(updatedSeen));
+            } catch {}
+            setIsGeneratingAI(false);
+            return;
+          }
         }
       }
     } catch {
@@ -184,8 +242,8 @@ export const CoupleQuiz: React.FC<CoupleQuizProps> = ({
           </div>
         </div>
 
-        {/* 3D Quiz Questions List (Always 5 Questions) */}
-        <div className="space-y-6 perspective-1200">
+        {/* 5 Quiz Questions List — Full Visibility, No 3D Z-Plane Clipping */}
+        <div className="space-y-6">
           {activeQuestions.map((q, idx) => {
             const hasAnswered = selectedAnswers[q.id] !== undefined;
             const chosenOption = selectedAnswers[q.id];
@@ -193,16 +251,22 @@ export const CoupleQuiz: React.FC<CoupleQuizProps> = ({
             return (
               <div
                 key={q.id}
-                className="bg-white border border-stone-200 rounded-2xl p-6 sm:p-8 shadow-xs card-3d-tilt"
+                className="relative bg-white border border-stone-200 rounded-2xl p-6 sm:p-8 shadow-[0_6px_0_0_#d6cec2,0_12px_24px_-6px_rgba(43,37,35,0.12)] transition-transform duration-200 hover:-translate-y-1"
               >
-                <div className="flex items-center justify-between gap-2 text-xs font-mono text-stone-400 mb-2">
-                  <span>QUESTION {idx + 1} OF {activeQuestions.length}</span>
+                <div className="flex items-center justify-between gap-2 text-xs font-mono text-stone-500 mb-3">
+                  <span className="font-semibold text-stone-600">
+                    QUESTION {idx + 1} OF {activeQuestions.length}
+                  </span>
                   <span className="text-[11px] text-rose-700 font-sans font-medium">
-                    Unique AI Set
+                    Unique AI Question #{idx + 1}
                   </span>
                 </div>
 
-                <h3 className="font-serif text-xl font-bold text-stone-900 mb-5 heading-3d">
+                {/* Full-width, unobstructed question heading */}
+                <h3
+                  style={{ textShadow: '0 1px 0 #e7e0d8, 0 2px 4px rgba(43, 37, 35, 0.08)' }}
+                  className="block w-full font-serif text-lg sm:text-xl font-bold text-stone-900 leading-relaxed break-words whitespace-normal mb-5"
+                >
                   {q.question}
                 </h3>
 
@@ -213,28 +277,31 @@ export const CoupleQuiz: React.FC<CoupleQuizProps> = ({
                     const isCorrect = optIdx === q.correctIndex;
 
                     let btnStyle =
-                      'bg-stone-50 hover:bg-stone-100/80 border-stone-200 text-stone-800 tile-3d-extruded';
+                      'bg-stone-50 hover:bg-stone-100/80 border-stone-200 text-stone-900 tile-3d-extruded';
 
                     if (hasAnswered) {
                       if (isCorrect) {
                         btnStyle =
-                          'bg-emerald-50 border-emerald-400 text-emerald-900 font-medium shadow-[0_4px_0_0_#10b981]';
+                          'bg-emerald-50 border-emerald-500 text-emerald-950 font-semibold shadow-[0_4px_0_0_#10b981]';
                       } else if (isSelected) {
                         btnStyle =
-                          'bg-rose-50 border-rose-300 text-rose-900 shadow-[0_4px_0_0_#fb7185]';
+                          'bg-rose-50 border-rose-400 text-rose-950 font-medium shadow-[0_4px_0_0_#fb7185]';
                       } else {
-                        btnStyle = 'opacity-40 border-stone-100 bg-stone-50 text-stone-400';
+                        btnStyle = 'border-stone-200 bg-stone-100/70 text-stone-500';
                       }
                     }
 
                     return (
                       <button
                         key={optIdx}
+                        type="button"
                         disabled={hasAnswered}
                         onClick={() => handleSelectOption(q.id, optIdx)}
-                        className={`p-4 rounded-xl border text-left text-sm transition-all duration-200 flex items-start justify-between gap-3 cursor-pointer ${btnStyle}`}
+                        className={`w-full p-4 rounded-xl border text-left text-sm sm:text-base leading-snug transition-all duration-200 flex items-start justify-between gap-3 cursor-pointer ${btnStyle}`}
                       >
-                        <span>{opt}</span>
+                        <span className="flex-1 break-words whitespace-normal">
+                          {opt}
+                        </span>
                         {hasAnswered && isCorrect && (
                           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                         )}
@@ -248,7 +315,7 @@ export const CoupleQuiz: React.FC<CoupleQuizProps> = ({
 
                 {/* Explanation text after answer */}
                 {hasAnswered && (
-                  <div className="mt-4 pt-3 border-t border-stone-100 text-xs sm:text-sm text-stone-600 font-sans italic">
+                  <div className="mt-4 pt-3 border-t border-stone-200/80 text-xs sm:text-sm text-stone-700 font-sans italic leading-relaxed break-words">
                     💡 {q.explanation}
                   </div>
                 )}
@@ -278,6 +345,7 @@ export const CoupleQuiz: React.FC<CoupleQuizProps> = ({
 
             <div className="flex items-center gap-2.5">
               <button
+                type="button"
                 onClick={handleReset}
                 className="px-4 py-2 text-xs font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer"
               >
@@ -285,6 +353,7 @@ export const CoupleQuiz: React.FC<CoupleQuizProps> = ({
                 <span>Retry Same 5</span>
               </button>
               <button
+                type="button"
                 onClick={() => void fetchAIQuizQuestions(true)}
                 disabled={isGeneratingAI}
                 className="px-4 py-2 text-xs font-semibold text-white bg-rose-700 hover:bg-rose-800 rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer btn-3d-rose"

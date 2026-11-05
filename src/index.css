@@ -277,8 +277,8 @@
 
 .heading-3d {
   display: inline-block;
-  transform: perspective(800px) rotateX(4deg);
-  transform-style: preserve-3d;
+  position: relative;
+  transform: translateZ(2px);
   text-shadow:
     0 1px 0 #e7e0d8,
     0 2px 0 #dbd1c7,
@@ -290,7 +290,7 @@
 }
 
 .heading-3d:hover {
-  transform: perspective(800px) rotateX(7deg) rotateY(-3deg) translateY(-2px);
+  transform: translateY(-2px) translateZ(4px);
 }
 
 .heading-3d-light {
