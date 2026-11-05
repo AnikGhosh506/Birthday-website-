@@ -19,11 +19,28 @@ import { compressImageFile, idbGet, idbSet } from '../utils/persistentStorage';
 
 interface Lantern3DData {
   group: THREE.Group;
+  paperMat: THREE.MeshStandardMaterial;
   vx: number;
   vy: number;
   vz: number;
   swayPhase: number;
   lanternIndex: number;
+  currentScale: number;
+  targetScale: number;
+}
+
+interface SparkleBurstParticle {
+  active: boolean;
+  x: number;
+  y: number;
+  z: number;
+  vx: number;
+  vy: number;
+  vz: number;
+  age: number;
+  maxAge: number;
+  baseScale: number;
+  rotSpeed: number;
 }
 
 export interface LanternPhotoSlot {
@@ -74,8 +91,11 @@ const DEFAULT_LANTERN_SLOTS: LanternPhotoSlot[] = [
   },
 ];
 
+// Pre-allocated module-scope math objects to ensure zero GC inside the render loop
 const _dummy = new THREE.Object3D();
+const _sparkleDummy = new THREE.Object3D();
 const _color = new THREE.Color();
+const _burstOrigin = new THREE.Vector3();
 
 const detectSoftwareGl = (): boolean => {
   try {
@@ -90,6 +110,26 @@ const detectSoftwareGl = (): boolean => {
     return true;
   }
 };
+
+// Procedural soft radial glow sprite texture for floating stardust & fireflies
+function createGlowSpriteTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const grad = ctx.createRadialGradient(32, 32, 2, 32, 32, 30);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    grad.addColorStop(0.35, 'rgba(253, 224, 71, 0.85)');
+    grad.addColorStop(0.7, 'rgba(251, 113, 133, 0.35)');
+    grad.addColorStop(1, 'rgba(251, 113, 133, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
 
 export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
   memories = [],
@@ -208,23 +248,29 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
     controls.autoRotate = !isSoftwareGl;
     controls.autoRotateSpeed = 0.35;
 
-    // 1. InstancedMesh 3D Starfield
+    // ============================================================================
+    // 1. TWINKLING 3D STARFIELD (InstancedMesh - 160 Stars)
+    // ============================================================================
     const starCount = 160;
     const starGeo = new THREE.OctahedronGeometry(0.08, 0);
     const starMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const starField = new THREE.InstancedMesh(starGeo, starMat, starCount);
+    starField.frustumCulled = false;
 
+    const starPositions: { x: number; y: number; z: number; baseScale: number; phase: number }[] = [];
     for (let i = 0; i < starCount; i++) {
-      _dummy.position.set(
-        (Math.random() - 0.5) * 42,
-        (Math.random() - 0.5) * 24,
-        -6 - Math.random() * 20
-      );
+      const sx = (Math.random() - 0.5) * 42;
+      const sy = (Math.random() - 0.5) * 24;
+      const sz = -6 - Math.random() * 20;
       const scale = 0.5 + Math.random() * 1.3;
+      const phase = Math.random() * Math.PI * 2;
+      starPositions.push({ x: sx, y: sy, z: sz, baseScale: scale, phase });
+
+      _dummy.position.set(sx, sy, sz);
       _dummy.scale.set(scale, scale, scale);
       _dummy.updateMatrix();
       starField.setMatrixAt(i, _dummy.matrix);
-      _color.setHSL(0.1 + Math.random() * 0.15, 0.8, 0.85);
+      _color.setHSL(0.1 + Math.random() * 0.15, 0.85, 0.85);
       starField.setColorAt(i, _color);
     }
     starField.instanceMatrix.needsUpdate = true;
@@ -232,7 +278,130 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
     starField.computeBoundingSphere();
     scene.add(starField);
 
-    // Shared geometries & materials for Composite 3D Paper Lanterns
+    // ============================================================================
+    // 2. FLOATING FIREFLY & STARDUST EMBER PARTICLES (THREE.Points - 140 Embers)
+    // ============================================================================
+    const fireflyCount = 140;
+    const fireflyGeo = new THREE.BufferGeometry();
+    const fireflyPositions = new Float32Array(fireflyCount * 3);
+    const fireflyColors = new Float32Array(fireflyCount * 3);
+    const fireflyMeta: {
+      baseX: number;
+      speedY: number;
+      swayAmp: number;
+      swayFreq: number;
+      phase: number;
+    }[] = [];
+
+    for (let i = 0; i < fireflyCount; i++) {
+      const fx = (Math.random() - 0.5) * 22;
+      const fy = (Math.random() - 0.5) * 14;
+      const fz = (Math.random() - 0.5) * 10;
+      fireflyPositions[i * 3] = fx;
+      fireflyPositions[i * 3 + 1] = fy;
+      fireflyPositions[i * 3 + 2] = fz;
+
+      // Warm golden, amber, and soft rose stardust hues
+      _color.setHSL(0.06 + Math.random() * 0.09, 0.95, 0.68 + Math.random() * 0.2);
+      fireflyColors[i * 3] = _color.r;
+      fireflyColors[i * 3 + 1] = _color.g;
+      fireflyColors[i * 3 + 2] = _color.b;
+
+      fireflyMeta.push({
+        baseX: fx,
+        speedY: 0.25 + Math.random() * 0.45,
+        swayAmp: 0.35 + Math.random() * 0.65,
+        swayFreq: 0.8 + Math.random() * 1.4,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+
+    fireflyGeo.setAttribute('position', new THREE.BufferAttribute(fireflyPositions, 3));
+    fireflyGeo.setAttribute('color', new THREE.BufferAttribute(fireflyColors, 3));
+
+    const glowSpriteTex = createGlowSpriteTexture();
+    const fireflyMat = new THREE.PointsMaterial({
+      size: 0.38,
+      map: glowSpriteTex,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.88,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
+    });
+
+    const fireflyPoints = new THREE.Points(fireflyGeo, fireflyMat);
+    fireflyPoints.frustumCulled = false;
+    scene.add(fireflyPoints);
+
+    // ============================================================================
+    // 3. INTERACTIVE 3D SPARKLE BURST POOL (InstancedMesh - 64 Diamond Sparkles)
+    // ============================================================================
+    const burstPoolSize = 64;
+    const burstGeo = new THREE.OctahedronGeometry(0.11, 0);
+    const burstMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const burstMesh = new THREE.InstancedMesh(burstGeo, burstMat, burstPoolSize);
+    burstMesh.frustumCulled = false;
+
+    const burstPool: SparkleBurstParticle[] = [];
+    for (let i = 0; i < burstPoolSize; i++) {
+      burstPool.push({
+        active: false,
+        x: 0,
+        y: -999,
+        z: 0,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+        age: 0,
+        maxAge: 1,
+        baseScale: 1,
+        rotSpeed: 2,
+      });
+      _sparkleDummy.position.set(0, -999, 0);
+      _sparkleDummy.scale.setScalar(0);
+      _sparkleDummy.updateMatrix();
+      burstMesh.setMatrixAt(i, _sparkleDummy.matrix);
+      _color.setHSL(0.11 + (i % 4) * 0.03, 0.95, 0.72);
+      burstMesh.setColorAt(i, _color);
+    }
+    burstMesh.instanceMatrix.needsUpdate = true;
+    if (burstMesh.instanceColor) burstMesh.instanceColor.needsUpdate = true;
+    scene.add(burstMesh);
+
+    let burstCursor = 0;
+    const triggerSparkleBurstAt = (origin: THREE.Vector3, count: number = 22) => {
+      for (let i = 0; i < count; i++) {
+        const p = burstPool[burstCursor % burstPoolSize];
+        burstCursor++;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const speed = 1.1 + Math.random() * 2.4;
+
+        p.active = true;
+        p.x = origin.x + (Math.random() - 0.5) * 0.4;
+        p.y = origin.y + (Math.random() - 0.5) * 0.4;
+        p.z = origin.z + (Math.random() - 0.5) * 0.4;
+        p.vx = Math.sin(phi) * Math.cos(theta) * speed;
+        p.vy = Math.abs(Math.cos(phi)) * speed * 0.9 + 0.6;
+        p.vz = Math.sin(phi) * Math.sin(theta) * speed;
+        p.age = 0;
+        p.maxAge = 0.85 + Math.random() * 0.65;
+        p.baseScale = 0.75 + Math.random() * 1.15;
+        p.rotSpeed = (Math.random() - 0.5) * 8;
+      }
+    };
+
+    // ============================================================================
+    // 4. COMPOSITE 3D PAPER LANTERNS (6-Part Groups with Hover & Click Sparkles)
+    // ============================================================================
     const lanternShellGeo = new THREE.CylinderGeometry(0.52, 0.38, 1.22, 16);
     const topCapGeo = new THREE.ConeGeometry(0.54, 0.24, 16);
     const bottomRingGeo = new THREE.TorusGeometry(0.38, 0.035, 10, 24);
@@ -306,11 +475,14 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
       scene.add(group);
       lanterns.push({
         group,
+        paperMat,
         vx: (Math.random() - 0.5) * 0.22,
         vy: 0.38 + Math.random() * 0.3,
         vz: (Math.random() - 0.5) * 0.14,
         swayPhase: Math.random() * Math.PI * 2,
         lanternIndex: idx,
+        currentScale: 1,
+        targetScale: 1,
       });
     };
 
@@ -325,19 +497,80 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
     }
 
     spawnLanternRef.current = () => {
+      const sx = (Math.random() - 0.5) * 4;
+      const sy = -3.8;
+      const sz = 1 + (Math.random() - 0.5) * 2;
       createCompositeLantern(
-        (Math.random() - 0.5) * 4,
-        -4.2,
-        1 + (Math.random() - 0.5) * 2,
+        sx,
+        sy,
+        sz,
         Math.random() * 0.04,
         lanterns.length
       );
+      _burstOrigin.set(sx, sy + 0.5, sz);
+      triggerSparkleBurstAt(_burstOrigin, 26);
     };
 
-    // Raycaster so tapping a 3D lantern in the night sky opens its floating Memory Picture Card
+    // Raycaster for hover sparkle trail + tap/click photo reveal
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let pointerDownPos = { x: 0, y: 0 };
+    let hoveredLanternIdx: number | null = null;
+    let lastHoverRaycast = 0;
+
+    const getLanternMeshes = (): THREE.Object3D[] => {
+      const meshes: THREE.Object3D[] = [];
+      lanterns.forEach((l) => {
+        l.group.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            meshes.push(child);
+          }
+        });
+      });
+      return meshes;
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      const now = performance.now();
+      if (now - lastHoverRaycast < 45) return; // Throttled to ~22fps for smooth performance
+      lastHoverRaycast = now;
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+      const intersects = raycaster.intersectObjects(getLanternMeshes(), false);
+
+      if (intersects.length > 0) {
+        const hitObj = intersects[0].object;
+        const idx =
+          typeof hitObj.userData?.lanternIndex === 'number'
+            ? hitObj.userData.lanternIndex
+            : null;
+
+        if (idx !== null) {
+          if (hoveredLanternIdx !== idx) {
+            hoveredLanternIdx = idx;
+            const targetLantern = lanterns[idx];
+            if (targetLantern) {
+              triggerSparkleBurstAt(targetLantern.group.position, 10);
+            }
+          }
+          lanterns.forEach((l, i) => {
+            l.targetScale = i === idx ? 1.16 : 1.0;
+          });
+          renderer.domElement.style.cursor = 'pointer';
+          return;
+        }
+      }
+
+      hoveredLanternIdx = null;
+      lanterns.forEach((l) => {
+        l.targetScale = 1.0;
+      });
+      renderer.domElement.style.cursor = 'grab';
+    };
 
     const onPointerDown = (e: PointerEvent) => {
       pointerDownPos = { x: e.clientX, y: e.clientY };
@@ -346,7 +579,6 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
     const onPointerUp = (e: PointerEvent) => {
       const dx = Math.abs(e.clientX - pointerDownPos.x);
       const dy = Math.abs(e.clientY - pointerDownPos.y);
-      // Ignore camera orbit drags
       if (dx > 8 || dy > 8) return;
 
       const rect = renderer.domElement.getBoundingClientRect();
@@ -354,27 +586,22 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
       pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
       raycaster.setFromCamera(pointer, camera);
-      const lanternMeshes: THREE.Object3D[] = [];
-      lanterns.forEach((l) => {
-        l.group.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            lanternMeshes.push(child);
-          }
-        });
-      });
+      const intersects = raycaster.intersectObjects(getLanternMeshes(), false);
 
-      const intersects = raycaster.intersectObjects(lanternMeshes, false);
       if (intersects.length > 0) {
         const hitObj = intersects[0].object;
         const lanternIdx =
           typeof hitObj.userData?.lanternIndex === 'number'
             ? hitObj.userData.lanternIndex
             : 0;
+        const hitLantern = lanterns[lanternIdx];
+        if (hitLantern) {
+          triggerSparkleBurstAt(hitLantern.group.position, 28);
+        }
         const totalCards = Math.max(1, deckLengthRef.current);
         setActiveLanternCardIndex(lanternIdx % totalCards);
         romanticAudio.playCelebrationChime();
       } else {
-        // Even if they tap near a lantern in the night sky, spawn a glowing lantern AND open a memory photo card
         if (spawnLanternRef.current) {
           spawnLanternRef.current('✨');
         }
@@ -386,8 +613,13 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
     };
 
     const domElem = renderer.domElement;
+    domElem.addEventListener('pointermove', onPointerMove);
     domElem.addEventListener('pointerdown', onPointerDown);
     domElem.addEventListener('pointerup', onPointerUp);
+
+    if (!isSoftwareGl) {
+      renderer.compile(scene, camera);
+    }
 
     const handleResize = () => {
       if (!container) return;
@@ -421,6 +653,7 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
       const delta = Math.min(clock.getDelta(), 0.1);
       const elapsed = clock.getElapsedTime();
 
+      // 1. Animate floating 3D lanterns + smooth hover scale & glow damping
       lanterns.forEach((l, idx) => {
         l.group.position.y += l.vy * delta;
         l.group.position.x +=
@@ -428,11 +661,93 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
         l.group.rotation.y += delta * 0.4;
         l.group.rotation.z = Math.sin(elapsed * 1.5 + idx) * 0.08;
 
+        l.currentScale = THREE.MathUtils.damp(
+          l.currentScale,
+          l.targetScale,
+          7,
+          delta
+        );
+        l.group.scale.setScalar(l.currentScale);
+
+        const targetEmissive = l.targetScale > 1.05 ? 2.1 : 1.4 + Math.sin(elapsed * 3 + idx) * 0.15;
+        l.paperMat.emissiveIntensity = THREE.MathUtils.damp(
+          l.paperMat.emissiveIntensity,
+          targetEmissive,
+          6,
+          delta
+        );
+
         if (l.group.position.y > 6.5) {
           l.group.position.y = -5.5;
           l.group.position.x = (Math.random() - 0.5) * 14;
         }
       });
+
+      // 2. Twinkle 3D background stars
+      for (let i = 0; i < starCount; i++) {
+        const st = starPositions[i];
+        const twinkle =
+          st.baseScale * (0.75 + 0.35 * Math.sin(elapsed * 2.6 + st.phase));
+        _dummy.position.set(st.x, st.y, st.z);
+        _dummy.scale.setScalar(twinkle);
+        _dummy.rotation.y = elapsed * 0.3 + st.phase;
+        _dummy.updateMatrix();
+        starField.setMatrixAt(i, _dummy.matrix);
+      }
+      starField.instanceMatrix.needsUpdate = true;
+
+      // 3. Drift floating firefly / stardust particles upward in gentle spirals
+      const posAttr = fireflyGeo.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < fireflyCount; i++) {
+        const meta = fireflyMeta[i];
+        let py = posAttr.getY(i) + meta.speedY * delta;
+        if (py > 7.2) {
+          py = -6.8;
+        }
+        const px =
+          meta.baseX +
+          Math.sin(elapsed * meta.swayFreq + meta.phase) * meta.swayAmp;
+        const pz = posAttr.getZ(i) + Math.cos(elapsed * 0.9 + meta.phase) * 0.15 * delta;
+        posAttr.setXYZ(i, px, py, pz);
+      }
+      posAttr.needsUpdate = true;
+
+      // 4. Advance interactive 3D sparkle bursts
+      let anyBurstUpdated = false;
+      for (let i = 0; i < burstPoolSize; i++) {
+        const p = burstPool[i];
+        if (!p.active) continue;
+        anyBurstUpdated = true;
+        p.age += delta;
+        if (p.age >= p.maxAge) {
+          p.active = false;
+          _sparkleDummy.position.set(0, -999, 0);
+          _sparkleDummy.scale.setScalar(0);
+          _sparkleDummy.updateMatrix();
+          burstMesh.setMatrixAt(i, _sparkleDummy.matrix);
+          continue;
+        }
+        p.x += p.vx * delta;
+        p.y += p.vy * delta;
+        p.z += p.vz * delta;
+        p.vx *= 0.96;
+        p.vz *= 0.96;
+
+        const lifeRatio = 1 - p.age / p.maxAge;
+        const scale = p.baseScale * Math.sin(lifeRatio * Math.PI);
+        _sparkleDummy.position.set(p.x, p.y, p.z);
+        _sparkleDummy.rotation.set(
+          elapsed * p.rotSpeed,
+          elapsed * p.rotSpeed * 1.3,
+          0
+        );
+        _sparkleDummy.scale.setScalar(Math.max(0.001, scale));
+        _sparkleDummy.updateMatrix();
+        burstMesh.setMatrixAt(i, _sparkleDummy.matrix);
+      }
+      if (anyBurstUpdated) {
+        burstMesh.instanceMatrix.needsUpdate = true;
+      }
 
       controls.update();
       renderer.render(scene, camera);
@@ -450,11 +765,17 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
       cancelAnimationFrame(frameId);
       clearTimeout(frameId);
       window.removeEventListener('resize', handleResize);
+      domElem.removeEventListener('pointermove', onPointerMove);
       domElem.removeEventListener('pointerdown', onPointerDown);
       domElem.removeEventListener('pointerup', onPointerUp);
       controls.dispose();
       starGeo.dispose();
       starMat.dispose();
+      fireflyGeo.dispose();
+      fireflyMat.dispose();
+      glowSpriteTex.dispose();
+      burstGeo.dispose();
+      burstMat.dispose();
       lanternShellGeo.dispose();
       topCapGeo.dispose();
       bottomRingGeo.dispose();
@@ -580,7 +901,7 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
             Tap a 3D Lantern to Reveal Night Sky Memories
           </h2>
           <p className="mt-2 text-sm text-stone-300 font-sans">
-            Tap or click any glowing lantern floating in the 3D night sky to open a hidden memory picture card, or upload new lantern photos that stay forever.
+            Hover over the floating lanterns to awaken golden stardust sparkles, or tap any lantern in the 3D night sky to open a hidden memory picture card.
           </p>
 
           {/* Quick action bar to open or upload lantern photos */}
@@ -591,13 +912,13 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
                 setActiveLanternCardIndex(0);
                 romanticAudio.playCelebrationChime();
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-semibold transition-all cursor-pointer shadow-md"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-semibold transition-all cursor-pointer shadow-md whitespace-nowrap"
             >
               <ImageIcon className="w-4 h-4" />
               <span>View Lantern Memory Pictures ({combinedPhotoDeck.length})</span>
             </button>
 
-            <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 border border-stone-700 text-amber-300 text-xs font-semibold transition-all cursor-pointer">
+            <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 border border-stone-700 text-amber-300 text-xs font-semibold transition-all cursor-pointer whitespace-nowrap">
               <Camera className="w-4 h-4" />
               <span>{isUploadingPhoto ? 'Saving Photo...' : 'Add Night Lantern Photo'}</span>
               <input
@@ -614,82 +935,71 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
         <div className="relative rounded-2xl overflow-hidden border border-stone-800 shadow-2xl bg-[#090d1a]">
           <div
             ref={mountRef}
-            className="w-full h-[460px] cursor-pointer"
+            className="w-full h-[460px] cursor-grab active:cursor-grabbing"
           />
 
-          <div className="absolute top-3 left-4 text-[11px] text-stone-200 font-sans pointer-events-none flex items-center gap-1.5 bg-stone-950/85 px-3.5 py-1.5 rounded-lg border border-amber-500/30 shadow-md">
+          <div className="absolute top-3 left-4 text-[11px] text-stone-200 font-sans pointer-events-none flex items-center gap-1.5 bg-stone-950/90 px-3.5 py-1.5 rounded-lg border border-amber-500/30 shadow-md">
             <Eye className="w-3.5 h-3.5 text-amber-400" />
-            <span>Tap Any 3D Lantern in the Night Sky to Reveal a Memory Picture · Drag to Orbit</span>
+            <span>Hover for 3D Stardust Sparkles · Tap Any Lantern for Memory Photo · Drag to Orbit</span>
           </div>
 
-          {/* Floating Night-View Lantern Memory Photo Card Overlay when a lantern is tapped */}
+          {/* Floating Night-View Lantern Memory Photo Card Modal when a lantern is tapped */}
           {activeCard && activeLanternCardIndex !== null && (
-            <div className="absolute inset-0 z-20 bg-stone-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-fadeIn">
-              <div className="relative w-full max-w-md bg-stone-900 border border-amber-400/40 rounded-2xl p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.85)] text-white">
-                {/* Top bar */}
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-amber-400">
-                    <Sparkles className="w-3.5 h-3.5" />
+            <div
+              onClick={() => setActiveLanternCardIndex(null)}
+              className="fixed inset-0 z-50 bg-stone-950/85 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-stone-900 border-2 border-amber-400/60 rounded-2xl p-5 sm:p-6 shadow-[0_24px_70px_rgba(0,0,0,0.9)] text-white my-auto"
+              >
+                {/* High-Visibility Top Header Bar with Clear Close Button */}
+                <div className="flex items-center justify-between gap-3 pb-3 mb-4 border-b border-stone-800">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold">
+                    <Sparkles className="w-4 h-4 shrink-0" />
                     <span>
                       Lantern Memory {(activeLanternCardIndex % combinedPhotoDeck.length) + 1} of{' '}
                       {combinedPhotoDeck.length}
                     </span>
                   </span>
+
                   <button
                     type="button"
                     onClick={() => setActiveLanternCardIndex(null)}
-                    className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white transition-colors cursor-pointer"
-                    title="Close Lantern Photo"
+                    aria-label="Close Lantern Memory"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-rose-700 border border-stone-600 hover:border-rose-500 text-xs font-semibold text-white transition-colors cursor-pointer shrink-0 shadow-sm"
                   >
                     <X className="w-4 h-4" />
+                    <span>Close</span>
                   </button>
                 </div>
 
-                {/* Polaroid Frame inside the Night Sky */}
-                <div className="relative rounded-xl overflow-hidden bg-stone-950 border border-stone-800 aspect-[4/3] mb-4 flex items-center justify-center group">
+                {/* Polaroid Frame inside the Night Sky (Unclipped, Flexible Height) */}
+                <div className="relative rounded-xl overflow-hidden bg-stone-950 border border-stone-700/90 min-h-[220px] max-h-[320px] mb-4 flex items-center justify-center">
                   {activeCard.imageUrl ? (
-                    <>
-                      <img
-                        src={activeCard.imageUrl}
-                        alt={activeCard.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="px-2.5 py-1.5 rounded-lg bg-stone-900/85 hover:bg-stone-900 text-amber-300 text-[11px] font-medium flex items-center gap-1 border border-stone-700 cursor-pointer"
-                        >
-                          <Camera className="w-3 h-3" />
-                          <span>Change</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleRemoveActiveLanternPhoto}
-                          className="px-2.5 py-1.5 rounded-lg bg-rose-950/90 hover:bg-rose-900 text-rose-200 text-[11px] font-medium flex items-center gap-1 border border-rose-800/60 cursor-pointer"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          <span>Remove</span>
-                        </button>
-                      </div>
-                    </>
+                    <img
+                      src={activeCard.imageUrl}
+                      alt={activeCard.title}
+                      referrerPolicy="no-referrer"
+                      className="w-full max-h-[320px] object-contain bg-stone-950"
+                    />
                   ) : (
-                    <div className="text-center p-6 flex flex-col items-center justify-center">
-                      <div className="w-14 h-14 rounded-full bg-amber-500/15 border border-amber-400/40 flex items-center justify-center text-amber-300 mb-3">
-                        <Camera className="w-6 h-6" />
+                    <div className="w-full py-7 px-5 text-center flex flex-col items-center justify-center">
+                      <div className="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 mb-3 shrink-0">
+                        <Camera className="w-5 h-5" />
                       </div>
-                      <p className="font-serif text-base font-bold text-amber-200 mb-1">
+                      <p className="font-serif text-base sm:text-lg font-bold text-amber-200 mb-1">
                         {activeCard.title}
                       </p>
-                      <p className="text-xs text-stone-400 max-w-xs mb-4">
+                      <p className="text-xs sm:text-sm text-stone-300 max-w-xs mb-4 leading-relaxed">
                         Upload a favorite sibling photo to glow inside this 3D night lantern forever.
                       </p>
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-colors cursor-pointer shadow-md whitespace-nowrap"
                       >
-                        <Camera className="w-3.5 h-3.5" />
+                        <Camera className="w-4 h-4 shrink-0" />
                         <span>Upload Photo to This Lantern</span>
                       </button>
                     </div>
@@ -704,24 +1014,55 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
                   />
                 </div>
 
+                {/* Dedicated Action Bar for Uploading / Changing / Removing the Lantern Photo */}
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-stone-800">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3.5 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+                    >
+                      <Camera className="w-3.5 h-3.5 shrink-0" />
+                      <span>
+                        {activeCard.imageUrl ? 'Change Lantern Photo' : 'Upload Lantern Photo'}
+                      </span>
+                    </button>
+
+                    {activeCard.imageUrl && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveActiveLanternPhoto}
+                        className="px-3.5 py-2 rounded-lg bg-rose-900/90 hover:bg-rose-800 text-white text-xs font-semibold inline-flex items-center gap-1.5 border border-rose-700 transition-colors cursor-pointer whitespace-nowrap"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                        <span>Remove Photo</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <span className="text-[11px] text-amber-300/90 font-medium">
+                    Saved Permanently
+                  </span>
+                </div>
+
                 {/* Caption & Hand-written style note */}
-                <div className="mb-4">
+                <div className="mb-5">
                   <div className="text-[11px] font-mono text-stone-400 uppercase tracking-wider">
                     {activeCard.date}
                   </div>
-                  <h3 className="text-lg font-serif font-bold text-white mt-0.5">
+                  <h3 className="text-lg sm:text-xl font-serif font-bold text-white mt-0.5">
                     {activeCard.title}
                   </h3>
-                  <p className="text-sm text-stone-300 mt-1.5 leading-relaxed">
+                  <p className="text-sm text-stone-200 mt-1.5 leading-relaxed">
                     {activeCard.caption}
                   </p>
-                  <div className="mt-2.5 pt-2.5 border-t border-stone-800 text-amber-300 font-anik-handwriting text-lg">
+                  <div className="mt-3 pt-2.5 border-t border-stone-800 text-amber-300 font-anik-handwriting text-xl">
                     ✨ "{activeCard.wishText}"
                   </div>
                 </div>
 
-                {/* Prev / Next Lantern buttons */}
-                <div className="flex items-center justify-between gap-3 pt-2 border-t border-stone-800">
+                {/* High-Contrast Prev / Next / Close Lantern Footer Buttons */}
+                <div className="flex items-center justify-between gap-3 pt-3 border-t border-stone-800">
                   <button
                     type="button"
                     onClick={() => {
@@ -732,15 +1073,19 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
                           combinedPhotoDeck.length
                       );
                     }}
-                    className="px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-xs font-medium text-stone-200 inline-flex items-center gap-1 cursor-pointer"
+                    className="px-3.5 py-2 rounded-lg bg-stone-800 hover:bg-stone-700 border border-stone-700 text-xs font-semibold text-white inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                   >
-                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <ChevronLeft className="w-4 h-4" />
                     <span>Prev Lantern</span>
                   </button>
 
-                  <span className="text-[11px] text-stone-400">
-                    Saved Permanently
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveLanternCardIndex(null)}
+                    className="px-3.5 py-2 rounded-lg bg-stone-800 hover:bg-stone-700 border border-stone-700 text-xs font-medium text-stone-300 hover:text-white cursor-pointer whitespace-nowrap"
+                  >
+                    Done
+                  </button>
 
                   <button
                     type="button"
@@ -750,10 +1095,10 @@ export const LanternWishCanvas: React.FC<LanternWishCanvasProps> = ({
                         (prev) => ((prev ?? 0) + 1) % combinedPhotoDeck.length
                       );
                     }}
-                    className="px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-xs font-medium text-stone-200 inline-flex items-center gap-1 cursor-pointer"
+                    className="px-3.5 py-2 rounded-lg bg-stone-800 hover:bg-stone-700 border border-stone-700 text-xs font-semibold text-white inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                   >
                     <span>Next Lantern</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
