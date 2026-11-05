@@ -1,12 +1,17 @@
 // Web Audio API procedural romantic music box and chimes
 // Ensures 100% reliable romantic background music and sound effects without external broken MP3 links.
 
+type PlaybackListener = (isPlaying: boolean) => void;
+
 class RomanticAudioEngine {
   private ctx: AudioContext | null = null;
   private isPlaying = false;
   private timer: number | null = null;
+  private fadeStartTimer: number | null = null;
+  private fadeEndTimer: number | null = null;
   private noteIndex = 0;
   private masterGain: GainNode | null = null;
+  private listeners: Set<PlaybackListener> = new Set();
 
   // Gentle, nostalgic music box arpeggio melody in E Major (warm, dreamy, celebratory)
   // Notes in Hz: E4, G#4, B4, C#5, E5, F#5, G#5, B5
@@ -28,6 +33,37 @@ class RomanticAudioEngine {
     493.88, // B4
     329.63  // E4
   ];
+
+  public subscribe(listener: PlaybackListener): () => void {
+    this.listeners.add(listener);
+    listener(this.isPlaying);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private notifyListeners() {
+    this.listeners.forEach((listener) => listener(this.isPlaying));
+  }
+
+  private clearFadeTimers() {
+    if (this.fadeStartTimer !== null) {
+      window.clearTimeout(this.fadeStartTimer);
+      this.fadeStartTimer = null;
+    }
+    if (this.fadeEndTimer !== null) {
+      window.clearTimeout(this.fadeEndTimer);
+      this.fadeEndTimer = null;
+    }
+  }
+
+  private resetMasterVolume() {
+    if (this.ctx && this.masterGain) {
+      const now = this.ctx.currentTime;
+      this.masterGain.gain.cancelScheduledValues(now);
+      this.masterGain.gain.setValueAtTime(0.25, now);
+    }
+  }
 
   private initContext() {
     if (!this.ctx) {
@@ -80,7 +116,10 @@ class RomanticAudioEngine {
     osc2.stop(now + duration);
   }
 
+  // Manual toggle via the "Play Music Box / Pause Music Box" button
   public toggle(): boolean {
+    this.clearFadeTimers();
+    this.resetMasterVolume();
     if (this.isPlaying) {
       this.stop();
       return false;
@@ -92,9 +131,14 @@ class RomanticAudioEngine {
 
   public start() {
     this.initContext();
-    if (this.isPlaying) return;
+    this.resetMasterVolume();
+    if (this.isPlaying) {
+      this.notifyListeners();
+      return;
+    }
     this.isPlaying = true;
     this.noteIndex = 0;
+    this.notifyListeners();
 
     const playNext = () => {
       if (!this.isPlaying) return;
@@ -111,11 +155,47 @@ class RomanticAudioEngine {
   }
 
   public stop() {
+    this.clearFadeTimers();
     this.isPlaying = false;
     if (this.timer) {
       window.clearTimeout(this.timer);
       this.timer = null;
     }
+    this.resetMasterVolume();
+    this.notifyListeners();
+  }
+
+  /**
+   * Automatically starts the music box when all birthday candles are blown out,
+   * plays for `playDurationMs`, smoothly fades out over `fadeDurationMs`, and then stops
+   * so the user can manually turn the music button on/off afterwards whenever she likes.
+   */
+  public playTemporaryWithFadeOut(
+    playDurationMs: number = 9000,
+    fadeDurationMs: number = 4000
+  ) {
+    this.initContext();
+    this.clearFadeTimers();
+    this.resetMasterVolume();
+
+    if (!this.isPlaying) {
+      this.start();
+    } else {
+      this.notifyListeners();
+    }
+
+    this.fadeStartTimer = window.setTimeout(() => {
+      if (!this.isPlaying || !this.ctx || !this.masterGain) return;
+      const now = this.ctx.currentTime;
+      const fadeSeconds = fadeDurationMs / 1000;
+      this.masterGain.gain.cancelScheduledValues(now);
+      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value || 0.25, now);
+      this.masterGain.gain.linearRampToValueAtTime(0.0001, now + fadeSeconds);
+
+      this.fadeEndTimer = window.setTimeout(() => {
+        this.stop();
+      }, fadeDurationMs);
+    }, playDurationMs);
   }
 
   public isMusicPlaying(): boolean {
@@ -246,4 +326,3 @@ class RomanticAudioEngine {
 }
 
 export const romanticAudio = new RomanticAudioEngine();
-

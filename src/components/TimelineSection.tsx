@@ -1,6 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Memory } from '../types';
-import { MapPin, Calendar, Heart, ZoomIn, X, Camera, Plus, Trash2 } from 'lucide-react';
+import {
+  MapPin,
+  Calendar,
+  Heart,
+  ZoomIn,
+  X,
+  Camera,
+  Plus,
+  Trash2,
+  Gift,
+  Sparkles,
+} from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { romanticAudio } from '../utils/audioSynth';
 import { compressImageFile } from '../utils/persistentStorage';
 
@@ -11,6 +23,24 @@ interface TimelineSectionProps {
   onAddMemory: () => void;
 }
 
+const BIRTHDAY_SURPRISE_NOTES = [
+  {
+    kicker: 'Birthday Surprise · Secret Note #1',
+    title: 'A Little Scrapbook Secret for Didi 🎂',
+    note: 'Psst, Atrayee Didi! Every Polaroid here holds a handwritten memory from me — tap any card to read the full note or add our favorite photos forever!',
+  },
+  {
+    kicker: 'Birthday Surprise · Secret Note #2',
+    title: '3:30 AM Little Brother Confession 🍦',
+    note: 'Even when I stay up till 3:30 AM watching cinema and eating Magnum ice cream, you are still my biggest inspiration from home to NIT & Bangalore!',
+  },
+  {
+    kicker: 'Birthday Surprise · Secret Note #3',
+    title: 'Kali Pujo & Birthday Treat Promise ✨',
+    note: 'Hovering over Memory Lane officially unlocks 1 extra Magnum & street-food treat next time we meet in Durgapur or Kali Pujo!',
+  },
+];
+
 export const TimelineSection: React.FC<TimelineSectionProps> = ({
   memories,
   onUpdateMemoryImage,
@@ -19,6 +49,12 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
 }) => {
   const [activeTag, setActiveTag] = useState<string>('All');
   const [selectedMemoryId, setSelectedMemoryId] = useState<string | null>(null);
+
+  // Cute 'Birthday Surprise' notification state when hovering over the Memory Lane section
+  const [isSurpriseVisible, setIsSurpriseVisible] = useState<boolean>(false);
+  const [isSurpriseDismissed, setIsSurpriseDismissed] = useState<boolean>(false);
+  const [surpriseIndex, setSurpriseIndex] = useState<number>(0);
+  const hasChimedOnHoverRef = useRef<boolean>(false);
 
   const selectedMemory = memories.find((m) => m.id === selectedMemoryId) || null;
 
@@ -29,6 +65,35 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
     activeTag === 'All'
       ? memories
       : memories.filter((m) => m.tag === activeTag);
+
+  const handleSectionMouseEnter = () => {
+    if (!isSurpriseDismissed) {
+      setIsSurpriseVisible(true);
+      if (!hasChimedOnHoverRef.current) {
+        hasChimedOnHoverRef.current = true;
+        romanticAudio.playSoftClick();
+      }
+    }
+  };
+
+  const handleSectionMouseLeave = () => {
+    setIsSurpriseVisible(false);
+  };
+
+  const handleTriggerSurpriseAction = () => {
+    romanticAudio.playCelebrationChime();
+    confetti({
+      particleCount: 40,
+      spread: 60,
+      origin: { y: 0.75 },
+    });
+    setSurpriseIndex((prev) => (prev + 1) % BIRTHDAY_SURPRISE_NOTES.length);
+    if (filteredMemories.length > 0) {
+      const randomMem =
+        filteredMemories[Math.floor(Math.random() * filteredMemories.length)];
+      setSelectedMemoryId(randomMem.id);
+    }
+  };
 
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -86,8 +151,85 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
     );
   };
 
+  const currentSurprise = BIRTHDAY_SURPRISE_NOTES[surpriseIndex];
+
   return (
-    <section id="memories" className="py-20 border-b border-stone-200/80 bg-stone-50/50">
+    <section
+      id="memories"
+      onMouseEnter={handleSectionMouseEnter}
+      onMouseLeave={handleSectionMouseLeave}
+      className="relative py-20 border-b border-stone-200/80 bg-stone-50/50 overflow-hidden"
+    >
+      {/* Cute 'Birthday Surprise' Floating Notification on Section Hover */}
+      <div
+        role="status"
+        aria-live="polite"
+        className={`fixed bottom-6 right-6 z-40 max-w-xs sm:max-w-sm transition-all duration-200 ease-out ${
+          isSurpriseVisible && !isSurpriseDismissed
+            ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
+            : 'opacity-0 translate-y-4 scale-95 pointer-events-none'
+        }`}
+      >
+        <div className="bg-white border border-rose-200/90 rounded-2xl p-4 shadow-xl paper-texture">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 shadow-2xs">
+                <Gift className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold text-rose-800 tracking-wide">
+                  {currentSurprise.kicker}
+                </div>
+                <h4 className="font-serif text-sm font-bold text-stone-900">
+                  {currentSurprise.title}
+                </h4>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsSurpriseVisible(false);
+                setIsSurpriseDismissed(true);
+                romanticAudio.playSoftClick();
+              }}
+              aria-label="Dismiss birthday surprise notification"
+              className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <p className="mt-2.5 text-lg text-[#1e3a8a] font-anik-handwriting leading-snug">
+            {currentSurprise.note}
+          </p>
+
+          <div className="mt-3 pt-2.5 border-t border-stone-200/70 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                romanticAudio.playSoftClick();
+                setSurpriseIndex(
+                  (prev) => (prev + 1) % BIRTHDAY_SURPRISE_NOTES.length
+                );
+              }}
+              className="text-xs font-medium text-stone-600 hover:text-stone-900 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              Next Secret Note →
+            </button>
+
+            <button
+              type="button"
+              onClick={handleTriggerSurpriseAction}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap btn-3d-rose"
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>Open Surprise Memory</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-6xl mx-auto px-6">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
@@ -95,7 +237,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
             <div className="flex items-center gap-2 text-xs font-semibold text-rose-800 uppercase tracking-widest mb-2">
               <span>Chapter 02</span>
               <span aria-hidden="true">·</span>
-              <span>Sisterhood Scrapbook</span>
+              <span>Memory Lane Scrapbook</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900 heading-3d">
               Our Favorite Sister Memories
@@ -105,24 +247,40 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
             </p>
           </div>
 
-          {/* Interactive Filter Tabs (functional segmented controls per skill) */}
-          <div className="flex items-center gap-1.5 p-1 bg-stone-200/70 rounded-lg overflow-x-auto">
-            {tags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => {
-                  setActiveTag(tag);
-                  romanticAudio.playSoftClick();
-                }}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap cursor-pointer ${
-                  activeTag === tag
-                    ? 'bg-white text-stone-900 shadow-xs'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Button to re-open the Birthday Surprise popup anytime */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsSurpriseDismissed(false);
+                setIsSurpriseVisible(true);
+                romanticAudio.playCelebrationChime();
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-rose-800 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Gift className="w-3.5 h-3.5 text-rose-600" />
+              <span>Birthday Surprise</span>
+            </button>
+
+            {/* Interactive Filter Tabs (functional segmented controls per skill) */}
+            <div className="flex items-center gap-1.5 p-1 bg-stone-200/70 rounded-lg overflow-x-auto">
+              {tags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => {
+                    setActiveTag(tag);
+                    romanticAudio.playSoftClick();
+                  }}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    activeTag === tag
+                      ? 'bg-white text-stone-900 shadow-xs'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -221,7 +379,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
                       <button
                         type="button"
                         onClick={(e) => handleRemovePhoto(e, memory.id)}
-                        className="text-rose-600 hover:text-rose-800 font-medium transition-colors cursor-pointer"
+                        className="text-rose-600 hover:text-rose-800 font-medium transition-colors cursor-pointer whitespace-nowrap"
                       >
                         Remove photo
                       </button>
@@ -232,7 +390,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
                         setSelectedMemoryId(memory.id);
                         romanticAudio.playSoftClick();
                       }}
-                      className="text-stone-700 hover:text-stone-950 font-medium transition-colors cursor-pointer"
+                      className="text-stone-700 hover:text-stone-950 font-medium transition-colors cursor-pointer whitespace-nowrap"
                     >
                       Read handwritten note →
                     </button>

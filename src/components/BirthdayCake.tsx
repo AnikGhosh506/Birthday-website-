@@ -86,6 +86,7 @@ export const BirthdayCake: React.FC<BirthdayCakeProps> = ({
   const onAllBlown = () => {
     setHasBlownAll(true);
     romanticAudio.playCelebrationChime();
+    romanticAudio.playTemporaryWithFadeOut(9000, 4000);
     triggerConfetti();
     setTimeout(() => {
       setShowWishModal(true);

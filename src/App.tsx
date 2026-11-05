@@ -99,6 +99,13 @@ export default function App() {
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [isPersonalizeOpen, setIsPersonalizeOpen] = useState(false);
 
+  // Keep isMusicPlaying button state synced with automatic candle-blowout playback & fade-out
+  useEffect(() => {
+    return romanticAudio.subscribe((playing) => {
+      setIsMusicPlaying(playing);
+    });
+  }, []);
+
   // Hydrate permanent data and memory photos from IndexedDB on mount so photos stay forever across refreshes
   useEffect(() => {
     let mounted = true;
