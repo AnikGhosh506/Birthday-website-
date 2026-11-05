@@ -3,7 +3,7 @@ import { PersonalizationData } from '../types';
 export const DEFAULT_BIRTHDAY_DATA: PersonalizationData = {
   girlfriendName: "Atrayee",
   nickname: "Best Big Sis",
-  boyfriendName: "Arpita",
+  boyfriendName: "Anik",
   birthdayDate: "2026-05-28",
   anniversaryDate: "2010-05-28",
   heroKicker: "To the coolest, wisest older sister in the universe",

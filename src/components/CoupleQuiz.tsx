@@ -57,7 +57,7 @@ export const CoupleQuiz: React.FC<CoupleQuizProps> = ({
             <span aria-hidden="true">·</span>
             <span>Sibling Trivia</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900">
+          <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900 heading-3d">
             The Ultimate Sisterhood Quiz
           </h2>
           <p className="mt-2 text-sm sm:text-base text-stone-600 font-sans">
@@ -65,8 +65,8 @@ export const CoupleQuiz: React.FC<CoupleQuizProps> = ({
           </p>
         </div>
 
-        {/* Quiz Questions List */}
-        <div className="space-y-6">
+        {/* 3D Quiz Questions List */}
+        <div className="space-y-6 perspective-1200">
           {quiz.map((q, idx) => {
             const hasAnswered = selectedAnswers[q.id] !== undefined;
             const chosenOption = selectedAnswers[q.id];
@@ -74,32 +74,32 @@ export const CoupleQuiz: React.FC<CoupleQuizProps> = ({
             return (
               <div
                 key={q.id}
-                className="bg-white border border-stone-200 rounded-2xl p-6 sm:p-8 shadow-xs"
+                className="bg-white border border-stone-200 rounded-2xl p-6 sm:p-8 shadow-xs card-3d-tilt"
               >
                 <div className="flex items-center gap-2 text-xs font-mono text-stone-400 mb-2">
                   <span>QUESTION {idx + 1} OF {quiz.length}</span>
                 </div>
 
-                <h3 className="font-serif text-xl font-bold text-stone-900 mb-5">
+                <h3 className="font-serif text-xl font-bold text-stone-900 mb-5 heading-3d">
                   {q.question}
                 </h3>
 
-                {/* Option Buttons */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* 3D Extruded Option Buttons */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {q.options.map((opt, optIdx) => {
                     const isSelected = chosenOption === optIdx;
                     const isCorrect = optIdx === q.correctIndex;
 
                     let btnStyle =
-                      'bg-stone-50 hover:bg-stone-100/80 border-stone-200 text-stone-800';
+                      'bg-stone-50 hover:bg-stone-100/80 border-stone-200 text-stone-800 tile-3d-extruded';
 
                     if (hasAnswered) {
                       if (isCorrect) {
                         btnStyle =
-                          'bg-emerald-50 border-emerald-400 text-emerald-900 font-medium';
+                          'bg-emerald-50 border-emerald-400 text-emerald-900 font-medium shadow-[0_4px_0_0_#10b981]';
                       } else if (isSelected) {
                         btnStyle =
-                          'bg-rose-50 border-rose-300 text-rose-900';
+                          'bg-rose-50 border-rose-300 text-rose-900 shadow-[0_4px_0_0_#fb7185]';
                       } else {
                         btnStyle = 'opacity-40 border-stone-100 bg-stone-50 text-stone-400';
                       }

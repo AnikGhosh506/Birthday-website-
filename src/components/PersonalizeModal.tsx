@@ -163,7 +163,7 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
                     value={formData.boyfriendName}
                     onChange={(e) => handleTextChange('boyfriendName', e.target.value)}
                     className="w-full px-3.5 py-2 text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-stone-900 focus:ring-1 focus:ring-stone-900"
-                    placeholder="e.g. Arpita"
+                    placeholder="e.g. Anik"
                   />
                 </div>
 

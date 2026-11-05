@@ -58,7 +58,7 @@ export const ReasonsDeck: React.FC<ReasonsDeckProps> = ({
             <span aria-hidden="true">·</span>
             <span>Big Sister Appreciation</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900">
+          <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900 heading-3d">
             Why You're the Best Older Sister
           </h2>
           <p className="mt-2 text-sm sm:text-base text-stone-600 font-sans">
@@ -66,16 +66,18 @@ export const ReasonsDeck: React.FC<ReasonsDeckProps> = ({
           </p>
         </div>
 
-        {/* Interactive Card Presentation */}
-        <div className="relative mx-auto max-w-lg">
-          {/* Deck background stacked effect */}
-          <div className="absolute inset-0 translate-y-3 scale-95 bg-stone-200/70 rounded-3xl -z-10 shadow-xs" />
-          <div className="absolute inset-0 translate-y-1.5 scale-98 bg-stone-100 rounded-3xl -z-10 shadow-xs" />
+        {/* Interactive 3D Card Presentation */}
+        <div className="relative mx-auto max-w-lg perspective-1200">
+          {/* 3D Deck background stacked effect */}
+          <div className="absolute inset-0 translate-y-4 scale-94 bg-stone-300/60 rounded-3xl -z-20 shadow-xs" />
+          <div className="absolute inset-0 translate-y-2 scale-97 bg-stone-200/80 rounded-3xl -z-10 shadow-xs" />
 
-          {/* Main Card */}
+          {/* Main 3D Card */}
           <div
-            className={`bg-[#faf7f2] border border-stone-300 rounded-3xl p-8 sm:p-12 shadow-md transition-all duration-200 paper-texture ${
-              isFlipping ? 'opacity-40 scale-95' : 'opacity-100 scale-100'
+            className={`bg-[#faf7f2] border border-stone-300 rounded-3xl p-8 sm:p-12 shadow-md transition-all duration-300 paper-texture card-3d-tilt ${
+              isFlipping
+                ? 'opacity-40 scale-95 rotate-y-180'
+                : 'opacity-100 scale-100'
             }`}
           >
             {/* Top Card Bar */}

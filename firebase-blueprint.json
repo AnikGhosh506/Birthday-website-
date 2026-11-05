@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "WishEntry": {
+      "title": "WishEntry",
+      "description": "A birthday wish or note saved by Atrayee inside her private birthday keepsake.",
+      "type": "object",
+      "properties": {
+        "authorUid": {
+          "type": "string",
+          "description": "UID of the authenticated user",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified email address of the authorized birthday recipient",
+          "minLength": 5,
+          "maxLength": 100
+        },
+        "wishText": {
+          "type": "string",
+          "description": "The birthday wish text",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation"
+        }
+      },
+      "required": ["authorUid", "authorEmail", "wishText", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/wishes/{wishId}": {
+      "schema": { "$ref": "#/entities/WishEntry" },
+      "description": "Private birthday wishes accessible exclusively to atrayeede0025@gmail.com"
+    }
+  }
+}

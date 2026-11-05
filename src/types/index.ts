@@ -40,7 +40,7 @@ export interface QuizQuestion {
 export interface AdoreReason {
   id: number;
   text: string;
-  category: 'sweet' | 'funny' | 'deep';
+  category: 'sweet' | 'funny' | 'deep' | 'sisterhood';
 }
 
 export interface PersonalizationData {

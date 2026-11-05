@@ -37,7 +37,7 @@ export const LoveLettersSection: React.FC<LoveLettersSectionProps> = ({
             <span aria-hidden="true">·</span>
             <span>Wax-Sealed Envelopes</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900">
+          <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900 heading-3d">
             Open When...
           </h2>
           <p className="mt-3 text-sm sm:text-base text-stone-600 font-sans">
@@ -45,24 +45,27 @@ export const LoveLettersSection: React.FC<LoveLettersSectionProps> = ({
           </p>
         </div>
 
-        {/* Envelopes Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        {/* 3D Envelopes Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 perspective-1200">
           {letters.map((letter) => {
             const isRead = readLetterIds.has(letter.id);
             return (
               <div
                 key={letter.id}
                 onClick={() => handleOpenLetter(letter)}
-                className="group relative bg-[#fcfaf7] border border-stone-200/90 rounded-2xl p-6 shadow-xs hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden"
+                className="group relative bg-[#fcfaf7] border border-stone-200/90 rounded-2xl p-6 shadow-xs card-3d-tilt cursor-pointer flex flex-col justify-between overflow-hidden"
               >
                 {/* Envelope Flap visual decoration */}
                 <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-stone-200 via-rose-200 to-stone-200 opacity-60" />
 
-                {/* Wax Seal Stamp */}
+                {/* 3D Embossed Wax Seal Stamp */}
                 <div className="flex items-center justify-between mb-4">
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-105"
-                    style={{ backgroundColor: letter.sealColor || '#b91c1c' }}
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-transform group-hover:scale-110"
+                    style={{
+                      backgroundColor: letter.sealColor || '#b91c1c',
+                      boxShadow: '0 4px 0 0 rgba(69, 10, 10, 0.75), inset 0 2px 3px rgba(255,255,255,0.35)',
+                    }}
                   >
                     <Heart className="w-4 h-4 fill-white" />
                   </div>
@@ -157,7 +160,7 @@ export const LoveLettersSection: React.FC<LoveLettersSectionProps> = ({
                     {currentLetter.signOff || 'Forever yours,'}
                   </span>
                   <span className="font-serif font-bold text-base text-stone-900">
-                    {boyfriendName || 'Julian'}
+                    {boyfriendName || 'Anik'}
                   </span>
                 </div>
 

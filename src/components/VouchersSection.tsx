@@ -96,7 +96,7 @@ export const VouchersSection: React.FC<VouchersSectionProps> = ({
               <span aria-hidden="true">·</span>
               <span>No Expiration Date</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900">
+            <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900 heading-3d">
               Sisterhood Birthday Vouchers
             </h2>
             <p className="mt-2 text-sm sm:text-base text-stone-600 font-sans max-w-xl">
@@ -112,15 +112,15 @@ export const VouchersSection: React.FC<VouchersSectionProps> = ({
           </div>
         </div>
 
-        {/* Vintage Coupon Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* 3D Vintage Coupon Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 perspective-1200">
           {coupons.map((coupon) => (
             <div
               key={coupon.id}
-              className={`relative bg-white rounded-xl border border-stone-300 shadow-xs transition-all duration-200 overflow-hidden flex flex-col justify-between ${
+              className={`relative bg-white rounded-xl border border-stone-300 shadow-xs overflow-hidden flex flex-col justify-between ${
                 coupon.isRedeemed
                   ? 'opacity-80 bg-stone-100/80'
-                  : 'hover:shadow-md hover:border-stone-400'
+                  : 'card-3d-tilt hover:border-stone-400'
               }`}
             >
               {/* Ticket Notches Left & Right */}

@@ -86,7 +86,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
               <span aria-hidden="true">·</span>
               <span>Sisterhood Scrapbook</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900">
+            <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900 heading-3d">
               Our Favorite Sister Memories
             </h2>
             <p className="mt-2 text-sm sm:text-base text-stone-600 font-sans max-w-xl">
@@ -115,12 +115,12 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
           </div>
         </div>
 
-        {/* 3-Column Polaroid Memory Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* 3-Column 3D Polaroid Memory Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 perspective-1200">
           {filteredMemories.map((memory, idx) => (
             <div
               key={memory.id}
-              className="group relative bg-white p-4 rounded-xl border border-stone-200 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col"
+              className="group relative bg-white p-4 rounded-xl border border-stone-200 shadow-xs card-3d-tilt flex flex-col"
             >
               {/* Polaroid Photo Frame */}
               <div className="relative aspect-4/3 w-full rounded-lg overflow-hidden bg-stone-100 border border-stone-200/60 mb-4">

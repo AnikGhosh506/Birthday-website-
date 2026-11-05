@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { DEFAULT_BIRTHDAY_DATA } from './data/defaultData';
 import { PersonalizationData, LoveCoupon } from './types';
 import { romanticAudio } from './utils/audioSynth';
+import { AuthGate } from './components/AuthGate';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { BirthdayGameArcade } from './components/BirthdayGameArcade';
@@ -41,6 +42,10 @@ export default function App() {
           if (parsed.boyfriendName === 'Julian' || parsed.nickname === 'My Sunshine') {
             localStorage.setItem('amore_birthday_data', JSON.stringify(DEFAULT_BIRTHDAY_DATA));
             return DEFAULT_BIRTHDAY_DATA;
+          }
+          if (parsed.boyfriendName === 'Arpita') {
+            parsed.boyfriendName = 'Anik';
+            localStorage.setItem('amore_birthday_data', JSON.stringify({ ...DEFAULT_BIRTHDAY_DATA, ...parsed }));
           }
           return { ...DEFAULT_BIRTHDAY_DATA, ...parsed };
         }
@@ -115,93 +120,103 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf7f5] text-stone-900 selection:bg-rose-200 selection:text-rose-900">
-      {/* Top Navigation conforming to 3-zone contract */}
-      <Navbar
-        brandName={data.girlfriendName}
-        isMusicPlaying={isMusicPlaying}
-        onToggleMusic={handleToggleMusic}
-        onOpenPersonalize={() => setIsPersonalizeOpen(true)}
-      />
+    <AuthGate sisterName={data.girlfriendName} senderName={data.boyfriendName}>
+      {({ userEmail, onSignOut, onSwitchAccount }) => (
+        <div className="min-h-screen bg-[#faf7f5] text-stone-900 selection:bg-rose-200 selection:text-rose-900">
+          {/* Top Navigation conforming to 3-zone contract */}
+          <Navbar
+            brandName={data.girlfriendName}
+            isMusicPlaying={isMusicPlaying}
+            onToggleMusic={handleToggleMusic}
+            onOpenPersonalize={() => setIsPersonalizeOpen(true)}
+          />
 
-      {/* Main Content Area */}
-      <main>
-        {/* Hero Section: Editorial typography + Interactive Birthday Cake */}
-        <HeroSection
-          girlfriendName={data.girlfriendName}
-          nickname={data.nickname}
-          heroKicker={data.heroKicker}
-          heroHeadline={data.heroHeadline}
-          heroMessage={data.heroMessage}
-          secretWishMessage={data.secretWishMessage}
-          anniversaryDate={data.anniversaryDate}
-          birthdayDate={data.birthdayDate}
-          isMusicPlaying={isMusicPlaying}
-          onToggleMusic={handleToggleMusic}
-        />
+          {/* Main Content Area */}
+          <main>
+            {/* Hero Section: Editorial typography + Interactive Birthday Cake */}
+            <HeroSection
+              girlfriendName={data.girlfriendName}
+              nickname={data.nickname}
+              heroKicker={data.heroKicker}
+              heroHeadline={data.heroHeadline}
+              heroMessage={data.heroMessage}
+              secretWishMessage={data.secretWishMessage}
+              anniversaryDate={data.anniversaryDate}
+              birthdayDate={data.birthdayDate}
+              isMusicPlaying={isMusicPlaying}
+              onToggleMusic={handleToggleMusic}
+              onSwitchAccount={onSwitchAccount}
+              onSignOut={onSignOut}
+            />
 
-        {/* Interactive Birthday Game Arcade (3 Playable Games) */}
-        <BirthdayGameArcade
-          girlfriendName={data.girlfriendName}
-          boyfriendName={data.boyfriendName}
-          onUnlockBonusCoupon={handleUnlockBonusCoupon}
-          bonusUnlocked={hasBonusCoupon}
-        />
+            {/* Interactive Birthday Game Arcade (3 Playable Games) */}
+            <BirthdayGameArcade
+              girlfriendName={data.girlfriendName}
+              boyfriendName={data.boyfriendName}
+              onUnlockBonusCoupon={handleUnlockBonusCoupon}
+              bonusUnlocked={hasBonusCoupon}
+            />
 
-        {/* Memory Lane Scrapbook */}
-        <TimelineSection
-          memories={data.memories}
-          onUpdateMemoryImage={handleUpdateMemoryImage}
-          onAddMemory={handleAddMemory}
-        />
+            {/* Memory Lane Scrapbook */}
+            <TimelineSection
+              memories={data.memories}
+              onUpdateMemoryImage={handleUpdateMemoryImage}
+              onAddMemory={handleAddMemory}
+            />
 
-        {/* "Open When..." Wax-Sealed Letters */}
-        <LoveLettersSection
-          letters={data.letters}
-          girlfriendName={data.girlfriendName}
-          boyfriendName={data.boyfriendName}
-          onAddLetter={() => setIsPersonalizeOpen(true)}
-        />
+            {/* "Open When..." Wax-Sealed Letters */}
+            <LoveLettersSection
+              letters={data.letters}
+              girlfriendName={data.girlfriendName}
+              boyfriendName={data.boyfriendName}
+              onAddLetter={() => setIsPersonalizeOpen(true)}
+            />
 
-        {/* Perforated Birthday Love Coupons */}
-        <VouchersSection
-          coupons={data.coupons}
-          girlfriendName={data.girlfriendName}
-          onUpdateCoupons={handleUpdateCoupons}
-        />
+            {/* Perforated Birthday Love Coupons */}
+            <VouchersSection
+              coupons={data.coupons}
+              girlfriendName={data.girlfriendName}
+              onUpdateCoupons={handleUpdateCoupons}
+            />
 
-        {/* Reasons Why I Adore You Interactive Shuffle Cards */}
-        <ReasonsDeck
-          reasons={data.adoreReasons}
-          girlfriendName={data.girlfriendName}
-        />
+            {/* Reasons Why I Adore You Interactive Shuffle Cards */}
+            <ReasonsDeck
+              reasons={data.adoreReasons}
+              girlfriendName={data.girlfriendName}
+            />
 
-        {/* Couple Trivia / Relationship Quiz */}
-        <CoupleQuiz
-          quiz={data.quiz}
-          girlfriendName={data.girlfriendName}
-        />
+            {/* Sisterhood Trivia Quiz */}
+            <CoupleQuiz
+              quiz={data.quiz}
+              girlfriendName={data.girlfriendName}
+            />
 
-        {/* Night Sky of Floating Wishes Lanterns */}
-        <LanternWishCanvas />
-      </main>
+            {/* Night Sky of Floating Wishes Lanterns */}
+            <LanternWishCanvas />
+          </main>
 
-      {/* Footer */}
-      <Footer
-        girlfriendName={data.girlfriendName}
-        boyfriendName={data.boyfriendName}
-        onOpenPersonalize={() => setIsPersonalizeOpen(true)}
-      />
+          {/* Footer with Dedicated Logout & Switch Account Section */}
+          <Footer
+            girlfriendName={data.girlfriendName}
+            boyfriendName={data.boyfriendName}
+            userEmail={userEmail}
+            onSignOut={onSignOut}
+            onSwitchAccount={onSwitchAccount}
+            onOpenPersonalize={() => setIsPersonalizeOpen(true)}
+          />
 
-      {/* Personalization Modal for Boyfriend */}
-      <PersonalizeModal
-        isOpen={isPersonalizeOpen}
-        onClose={() => setIsPersonalizeOpen(false)}
-        data={data}
-        onSave={handleSaveData}
-        onReset={handleResetData}
-      />
-    </div>
+          {/* Personalization Modal */}
+          <PersonalizeModal
+            isOpen={isPersonalizeOpen}
+            onClose={() => setIsPersonalizeOpen(false)}
+            data={data}
+            onSave={handleSaveData}
+            onReset={handleResetData}
+          />
+        </div>
+      )}
+    </AuthGate>
   );
 }
+
 

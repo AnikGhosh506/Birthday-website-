@@ -13,6 +13,8 @@ interface HeroSectionProps {
   birthdayDate: string;
   isMusicPlaying?: boolean;
   onToggleMusic?: () => void;
+  onSwitchAccount?: () => void;
+  onSignOut?: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -26,6 +28,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   birthdayDate,
   isMusicPlaying = false,
   onToggleMusic,
+  onSwitchAccount,
+  onSignOut,
 }) => {
   // Calculate days together dynamically
   const calculateDaysTogether = () => {
@@ -57,6 +61,25 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     }
   };
 
+  const [titleTilt, setTitleTilt] = React.useState<{ rx: number; ry: number }>({
+    rx: 6,
+    ry: -5,
+  });
+
+  const handleTitleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+    setTitleTilt({
+      rx: Number((-ny * 12).toFixed(2)),
+      ry: Number((nx * 14).toFixed(2)),
+    });
+  };
+
+  const handleTitleMouseLeave = () => {
+    setTitleTilt({ rx: 6, ry: -5 });
+  };
+
   return (
     <section id="celebration" className="pt-8 pb-16 border-b border-stone-200/80">
       <div className="max-w-6xl mx-auto px-6">
@@ -71,41 +94,82 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <span>{formatBirthday(birthdayDate)} Celebration</span>
             </div>
 
-            {/* Display Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-bold tracking-tight text-stone-900 leading-[1.12] text-balance">
-              {heroHeadline ? (
-                heroHeadline.includes(girlfriendName) ? (
-                  heroHeadline
-                ) : (
-                  <>
-                    {heroHeadline}, <span className="italic font-normal text-rose-700">{girlfriendName}</span>
-                  </>
-                )
-              ) : (
-                <>
-                  Happy Birthday, <span className="italic font-normal text-rose-700">{girlfriendName}</span>
-                </>
-              )}
-            </h1>
+            {/* Interactive 3D Volumetric Extruded Headline ("Happy Birthday, Atrayee") */}
+            <div
+              onMouseMove={handleTitleMouseMove}
+              onMouseLeave={handleTitleMouseLeave}
+              className="hero-3d-stage py-3 cursor-grab active:cursor-grabbing select-none"
+              title="Move cursor to tilt 3D text"
+            >
+              <div
+                style={{
+                  transform: `rotateX(${titleTilt.rx}deg) rotateY(${titleTilt.ry}deg)`,
+                  transformStyle: 'preserve-3d',
+                  transition: 'transform 0.16s cubic-bezier(0.22, 1, 0.36, 1)',
+                }}
+                className="relative inline-block preserve-3d"
+              >
+                {/* 3D Extruded Depth Layers along the Z-axis */}
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((layer) => (
+                  <div
+                    key={layer}
+                    aria-hidden="true"
+                    style={{
+                      transform: `translateZ(${-layer * 2.2}px) translateY(${layer * 0.6}px)`,
+                    }}
+                    className="absolute inset-0 text-4xl sm:text-5xl lg:text-6xl font-serif font-bold tracking-tight leading-[1.16] text-balance pointer-events-none select-none"
+                  >
+                    <span
+                      style={{
+                        color: layer > 5 ? '#78685a' : '#b8a696',
+                      }}
+                    >
+                      Happy Birthday,
+                    </span>{' '}
+                    <span
+                      className="italic font-bold"
+                      style={{
+                        color: layer > 5 ? '#4c0519' : '#9f1239',
+                      }}
+                    >
+                      {girlfriendName || 'Atrayee'}
+                    </span>
+                  </div>
+                ))}
+
+                {/* Front Lit 3D Face */}
+                <h1
+                  style={{
+                    transform: 'translateZ(4px)',
+                  }}
+                  className="relative text-4xl sm:text-5xl lg:text-6xl font-serif font-bold tracking-tight leading-[1.16] text-balance"
+                >
+                  <span className="text-3d-birthday">Happy Birthday,</span>{' '}
+                  <span className="italic font-bold text-3d-atrayee">
+                    {girlfriendName || 'Atrayee'}
+                  </span>
+                </h1>
+              </div>
+            </div>
 
             {/* Lead Prose */}
             <p className="mt-6 text-base sm:text-lg text-stone-600 leading-relaxed font-sans max-w-xl">
               {heroMessage}
             </p>
 
-            {/* Action buttons */}
+            {/* 3D Extruded Action buttons */}
             <div className="mt-8 flex flex-wrap items-center gap-3.5">
               <a
                 href="#arcade"
-                className="px-6 py-3 text-sm font-medium text-white bg-stone-900 rounded-lg hover:bg-stone-800 transition-colors shadow-xs inline-flex items-center gap-2 whitespace-nowrap shrink-0"
+                className="px-6 py-3 text-sm font-medium text-white bg-stone-900 rounded-lg hover:bg-stone-800 transition-colors inline-flex items-center gap-2 whitespace-nowrap shrink-0 btn-3d-dark"
               >
                 <Gamepad2 className="w-4 h-4 text-rose-400" />
-                <span>Play Birthday Game Arcade</span>
+                <span>Play 3D Birthday Arcade</span>
               </a>
 
               <a
                 href="#letters"
-                className="px-5 py-3 text-sm font-medium text-stone-800 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors shadow-xs inline-flex items-center gap-2 whitespace-nowrap shrink-0"
+                className="px-5 py-3 text-sm font-medium text-stone-800 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors inline-flex items-center gap-2 whitespace-nowrap shrink-0 tile-3d-extruded"
               >
                 <Heart className="w-4 h-4 text-rose-600" />
                 <span>Open Sister Letters</span>
@@ -114,7 +178,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               {onToggleMusic && (
                 <button
                   onClick={onToggleMusic}
-                  className="px-4 py-3 text-sm font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors inline-flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer"
+                  className="px-4 py-3 text-sm font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors inline-flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer tile-3d-extruded"
                 >
                   {isMusicPlaying ? (
                     <>
@@ -131,15 +195,39 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               )}
             </div>
 
-            {/* Quiet metadata line */}
-            <div className="mt-6 flex items-center gap-2 text-xs text-stone-500">
+            {/* Quiet metadata + quick session controls */}
+            <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-stone-500">
               <span>Celebrated with endless sibling pride</span>
               <span aria-hidden="true">·</span>
               <span>Always {nickname || 'Best Big Sis'}</span>
+              {(onSwitchAccount || onSignOut) && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  {onSwitchAccount && (
+                    <button
+                      onClick={onSwitchAccount}
+                      className="text-stone-700 hover:text-stone-950 font-medium underline underline-offset-2 transition-colors cursor-pointer"
+                    >
+                      Switch Account
+                    </button>
+                  )}
+                  {onSignOut && (
+                    <>
+                      <span aria-hidden="true">/</span>
+                      <button
+                        onClick={onSignOut}
+                        className="text-rose-700 hover:text-rose-900 font-medium underline underline-offset-2 transition-colors cursor-pointer"
+                      >
+                        Log Out
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
             </div>
           </div>
 
-          {/* Right Column: Interactive Birthday Cake */}
+          {/* Right Column: Interactive 3D Birthday Cake */}
           <div className="lg:col-span-5 flex justify-center">
             <BirthdayCake
               girlfriendName={girlfriendName}
@@ -149,12 +237,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
         </div>
 
-        {/* 4-Column KPI / Sisterhood Milestones Strip (Full-width row below hero split) */}
-        <div className="mt-14 pt-8 border-t border-stone-200/80 grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div className="p-4 rounded-xl bg-white border border-stone-200/70 shadow-xs">
+        {/* 4-Column 3D Sisterhood Milestones Strip */}
+        <div className="mt-14 pt-8 border-t border-stone-200/80 grid grid-cols-2 md:grid-cols-4 gap-6 perspective-1200">
+          <div className="p-4 rounded-xl bg-white border border-stone-200/70 card-3d-tilt">
             <span className="text-xs text-stone-500 font-medium">{girlfriendName}'s Special Day</span>
             <div className="mt-1 flex items-baseline gap-1.5">
-              <span className="text-2xl font-serif font-bold text-stone-900 tabular-nums">
+              <span className="text-2xl font-serif font-bold text-stone-900 tabular-nums heading-3d">
                 {formatBirthday(birthdayDate)}
               </span>
               <span className="text-xs text-rose-600 font-medium">28th May</span>
@@ -162,10 +250,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <p className="text-[11px] text-stone-400 mt-0.5">The day the best big sister was born</p>
           </div>
 
-          <div className="p-4 rounded-xl bg-white border border-stone-200/70 shadow-xs">
+          <div className="p-4 rounded-xl bg-white border border-stone-200/70 card-3d-tilt">
             <span className="text-xs text-stone-500 font-medium">Built-In Best Friend</span>
             <div className="mt-1 flex items-baseline gap-1.5">
-              <span className="text-2xl font-serif font-bold text-stone-900 tabular-nums">
+              <span className="text-2xl font-serif font-bold text-stone-900 tabular-nums heading-3d">
                 Lifetime
               </span>
               <span className="text-xs text-rose-600 font-medium">bond</span>
@@ -173,10 +261,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <p className="text-[11px] text-stone-400 mt-0.5">Protector, guide & partner in crime</p>
           </div>
 
-          <div className="p-4 rounded-xl bg-white border border-stone-200/70 shadow-xs">
+          <div className="p-4 rounded-xl bg-white border border-stone-200/70 card-3d-tilt">
             <span className="text-xs text-stone-500 font-medium">Inside Jokes & Late Talks</span>
             <div className="mt-1 flex items-baseline gap-1.5">
-              <span className="text-2xl font-serif font-bold text-stone-900 tabular-nums">
+              <span className="text-2xl font-serif font-bold text-stone-900 tabular-nums heading-3d">
                 1,000+
               </span>
               <span className="text-xs text-stone-500 font-medium">shared</span>
@@ -184,10 +272,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <p className="text-[11px] text-stone-400 mt-0.5">From childhood secrets to midnight snacks</p>
           </div>
 
-          <div className="p-4 rounded-xl bg-white border border-stone-200/70 shadow-xs">
+          <div className="p-4 rounded-xl bg-white border border-stone-200/70 card-3d-tilt">
             <span className="text-xs text-stone-500 font-medium">Big Sister Rating</span>
             <div className="mt-1 flex items-baseline gap-1.5">
-              <span className="text-2xl font-serif font-bold text-stone-900 tabular-nums">
+              <span className="text-2xl font-serif font-bold text-stone-900 tabular-nums heading-3d">
                 100%
               </span>
               <span className="text-xs text-rose-600 font-medium">iconic</span>
