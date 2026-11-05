@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LoveCoupon } from '../types';
-import confetti from 'canvas-confetti';
+import { triggerConfettiExplosion } from '../utils/confettiExplosion';
 import {
   Sparkles,
   Coffee,
@@ -44,16 +44,17 @@ export const VouchersSection: React.FC<VouchersSectionProps> = ({
     }
   };
 
-  const handleRedeem = (coupon: LoveCoupon) => {
+  const handleRedeem = (
+    coupon: LoveCoupon,
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
     if (coupon.isRedeemed) return;
     setRedeemingId(coupon.id);
     romanticAudio.playCelebrationChime();
 
-    confetti({
-      particleCount: 60,
-      spread: 60,
-      origin: { y: 0.7 },
-      colors: ['#e11d48', '#f59e0b', '#10b981'],
+    triggerConfettiExplosion({
+      clientX: e.clientX,
+      clientY: e.clientY,
     });
 
     const today = new Date().toLocaleDateString('en-US', {
@@ -175,7 +176,7 @@ export const VouchersSection: React.FC<VouchersSectionProps> = ({
                       Valid for {girlfriendName}
                     </span>
                     <button
-                      onClick={() => handleRedeem(coupon)}
+                      onClick={(e) => handleRedeem(coupon, e)}
                       disabled={redeemingId === coupon.id}
                       className="px-5 py-2.5 text-xs sm:text-sm font-semibold text-white rounded-xl cursor-pointer inline-flex items-center gap-2 whitespace-nowrap shrink-0 btn-3d-redeem"
                     >

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { QuizQuestion } from '../types';
 import { EXTENDED_QUIZ_POOL } from '../data/defaultData';
 import { CheckCircle2, XCircle, RotateCcw, Award, Sparkles, RefreshCw } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { triggerConfettiExplosion } from '../utils/confettiExplosion';
 import { romanticAudio } from '../utils/audioSynth';
 
 interface CoupleQuizProps {
@@ -175,24 +175,28 @@ export const CoupleQuiz: React.FC<CoupleQuizProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSelectOption = (questionId: string, optionIndex: number) => {
+  const handleSelectOption = (
+    questionId: string,
+    optionIndex: number,
+    e?: React.MouseEvent<HTMLButtonElement>
+  ) => {
     if (selectedAnswers[questionId] !== undefined) return;
     romanticAudio.playSoftClick();
+
+    const clickCoords = e
+      ? { clientX: e.clientX, clientY: e.clientY }
+      : undefined;
 
     const next = { ...selectedAnswers, [questionId]: optionIndex };
     setSelectedAnswers(next);
 
-    // If all 5 answered, show results & celebration
+    // If all 5 answered, show results & multi-stage particle confetti explosion
     if (Object.keys(next).length === activeQuestions.length) {
       setTimeout(() => {
         setShowResults(true);
         romanticAudio.playCelebrationChime();
-        confetti({
-          particleCount: 55,
-          spread: 65,
-          origin: { y: 0.8 },
-        });
-      }, 450);
+        triggerConfettiExplosion(clickCoords);
+      }, 350);
     }
   };
 
@@ -296,7 +300,7 @@ export const CoupleQuiz: React.FC<CoupleQuizProps> = ({
                         key={optIdx}
                         type="button"
                         disabled={hasAnswered}
-                        onClick={() => handleSelectOption(q.id, optIdx)}
+                        onClick={(e) => handleSelectOption(q.id, optIdx, e)}
                         className={`w-full p-4 rounded-xl border text-left text-sm sm:text-base leading-snug transition-all duration-200 flex items-start justify-between gap-3 cursor-pointer ${btnStyle}`}
                       >
                         <span className="flex-1 break-words whitespace-normal">
