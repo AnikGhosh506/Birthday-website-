@@ -1,21 +1,26 @@
 import React, { useState } from 'react';
 import { Memory } from '../types';
-import { MapPin, Calendar, Heart, ZoomIn, X, Camera, Plus } from 'lucide-react';
+import { MapPin, Calendar, Heart, ZoomIn, X, Camera, Plus, Trash2 } from 'lucide-react';
 import { romanticAudio } from '../utils/audioSynth';
+import { compressImageFile } from '../utils/persistentStorage';
 
 interface TimelineSectionProps {
   memories: Memory[];
   onUpdateMemoryImage: (id: string, dataUrl: string) => void;
+  onRemoveMemoryImage: (id: string) => void;
   onAddMemory: () => void;
 }
 
 export const TimelineSection: React.FC<TimelineSectionProps> = ({
   memories,
   onUpdateMemoryImage,
+  onRemoveMemoryImage,
   onAddMemory,
 }) => {
   const [activeTag, setActiveTag] = useState<string>('All');
-  const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null);
+  const [selectedMemoryId, setSelectedMemoryId] = useState<string | null>(null);
+
+  const selectedMemory = memories.find((m) => m.id === selectedMemoryId) || null;
 
   // Extract unique tags for filter tabs (functional buttons allowed per skill)
   const tags = ['All', ...Array.from(new Set(memories.map((m) => m.tag)))];
@@ -25,21 +30,27 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
       ? memories
       : memories.filter((m) => m.tag === activeTag);
 
-  const handleImageUpload = (
+  const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     memoryId: string
   ) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          onUpdateMemoryImage(memoryId, reader.result);
-          romanticAudio.playSoftClick();
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedDataUrl = await compressImageFile(file, 1400, 0.85);
+        onUpdateMemoryImage(memoryId, compressedDataUrl);
+        romanticAudio.playSoftClick();
+      } catch (err) {
+        console.error('Failed to process image', err);
+      }
+      e.target.value = '';
     }
+  };
+
+  const handleRemovePhoto = (e: React.MouseEvent, memoryId: string) => {
+    e.stopPropagation();
+    romanticAudio.playSoftClick();
+    onRemoveMemoryImage(memoryId);
   };
 
   // SVG Fallback for photo placeholders with warm romantic aesthetics
@@ -139,7 +150,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
                 <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
                   {/* Photo Upload Icon */}
                   <label
-                    title="Upload real photo"
+                    title={memory.imageUrl ? 'Change photo' : 'Upload real photo'}
                     className="p-1.5 bg-white/90 hover:bg-white text-stone-700 rounded-md shadow-xs cursor-pointer transition-colors backdrop-blur-xs"
                   >
                     <Camera className="w-3.5 h-3.5" />
@@ -151,10 +162,24 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
                     />
                   </label>
 
+                  {/* Remove Photo Icon (shown whenever an image is present) */}
+                  {memory.imageUrl && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleRemovePhoto(e, memory.id)}
+                      title="Remove photo"
+                      aria-label="Remove photo"
+                      className="p-1.5 bg-white/90 hover:bg-rose-50 text-rose-600 hover:text-rose-700 rounded-md shadow-xs cursor-pointer transition-colors backdrop-blur-xs"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+
                   {/* Lightbox Zoom Icon */}
                   <button
+                    type="button"
                     onClick={() => {
-                      setSelectedMemory(memory);
+                      setSelectedMemoryId(memory.id);
                       romanticAudio.playSoftClick();
                     }}
                     title="View details"
@@ -184,22 +209,34 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
                     {memory.title}
                   </h3>
 
-                  <p className="mt-2 text-xs sm:text-sm text-stone-600 line-clamp-3 font-sans leading-relaxed">
+                  <p className="mt-2 text-lg sm:text-xl text-[#1e3a8a] line-clamp-3 font-anik-handwriting leading-snug">
                     {memory.caption}
                   </p>
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-xs text-stone-400">
                   <span className="text-rose-700 font-medium">{memory.tag}</span>
-                  <button
-                    onClick={() => {
-                      setSelectedMemory(memory);
-                      romanticAudio.playSoftClick();
-                    }}
-                    className="text-stone-700 hover:text-stone-950 font-medium transition-colors"
-                  >
-                    Read memory →
-                  </button>
+                  <div className="flex items-center gap-3">
+                    {memory.imageUrl && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleRemovePhoto(e, memory.id)}
+                        className="text-rose-600 hover:text-rose-800 font-medium transition-colors cursor-pointer"
+                      >
+                        Remove photo
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedMemoryId(memory.id);
+                        romanticAudio.playSoftClick();
+                      }}
+                      className="text-stone-700 hover:text-stone-950 font-medium transition-colors cursor-pointer"
+                    >
+                      Read handwritten note →
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -228,9 +265,9 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
             <div className="relative w-full max-w-2xl bg-white rounded-2xl border border-stone-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
               {/* Close Button */}
               <button
-                onClick={() => setSelectedMemory(null)}
+                onClick={() => setSelectedMemoryId(null)}
                 aria-label="Close memory modal"
-                className="absolute top-3 right-3 z-10 p-2 rounded-full bg-stone-900/60 hover:bg-stone-900 text-white transition-colors"
+                className="absolute top-3 right-3 z-10 p-2 rounded-full bg-stone-900/60 hover:bg-stone-900 text-white transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -249,14 +286,14 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
                     <Heart className="w-12 h-12 text-rose-400 mb-2 fill-rose-400/30" />
                     <span className="font-serif text-xl text-white">{selectedMemory.title}</span>
                     <span className="text-xs text-stone-400 mt-2">
-                      Upload your real photo in the card or edit modal
+                      Upload your real photo below or on the card
                     </span>
                   </div>
                 )}
               </div>
 
               {/* Memory Text & Metadata */}
-              <div className="p-6 overflow-y-auto">
+              <div className="p-6 overflow-y-auto paper-texture">
                 <div className="flex items-center gap-2 text-xs text-stone-500 mb-2">
                   <span>{selectedMemory.date}</span>
                   <span aria-hidden="true">·</span>
@@ -269,14 +306,38 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
                   {selectedMemory.title}
                 </h3>
 
-                <p className="text-base text-stone-700 leading-relaxed font-sans whitespace-pre-line">
+                <p className="text-2xl text-[#1e3a8a] leading-relaxed font-anik-handwriting whitespace-pre-line">
                   {selectedMemory.caption}
                 </p>
 
-                <div className="mt-6 pt-4 border-t border-stone-200 flex justify-end">
+                <div className="mt-6 pt-4 border-t border-stone-200 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <label className="px-3.5 py-2 text-xs font-medium text-stone-800 bg-white border border-stone-300 hover:bg-stone-50 rounded-lg inline-flex items-center gap-1.5 cursor-pointer transition-colors">
+                      <Camera className="w-3.5 h-3.5 text-stone-600" />
+                      <span>{selectedMemory.imageUrl ? 'Change Photo' : 'Upload Photo'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleImageUpload(e, selectedMemory.id)}
+                      />
+                    </label>
+
+                    {selectedMemory.imageUrl && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleRemovePhoto(e, selectedMemory.id)}
+                        className="px-3.5 py-2 text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Remove Photo</span>
+                      </button>
+                    )}
+                  </div>
+
                   <button
-                    onClick={() => setSelectedMemory(null)}
-                    className="px-5 py-2 text-sm font-medium text-stone-800 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors"
+                    onClick={() => setSelectedMemoryId(null)}
+                    className="px-5 py-2 text-sm font-medium text-stone-800 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors cursor-pointer"
                   >
                     Close
                   </button>

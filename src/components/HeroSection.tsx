@@ -80,8 +80,157 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     setTitleTilt({ rx: 6, ry: -5 });
   };
 
+  // Smooth scroll-aware docking: sticks at the top when scrolled past its original position,
+  // and glides seamlessly back into its exact original space when scrolling through it.
+  const prideBarAnchorRef = React.useRef<HTMLDivElement | null>(null);
+  const floatingBarRef = React.useRef<HTMLDivElement | null>(null);
+  const [isFloatingActive, setIsFloatingActive] = React.useState(false);
+
+  React.useEffect(() => {
+    const STICKY_TOP = 74; // 64px sticky Navbar + 10px breathing room
+    let rafId: number | null = null;
+
+    // Spring/lerp state for ultra-smooth landing into original space
+    let visualGap = 0; // smoothed vertical distance above original anchor space
+    let currentPillAlpha = 0; // 0 = in-place look, 1 = floating pill look
+    let isAnimating = false;
+
+    const applyFloatingStyles = (
+      anchorRect: DOMRect,
+      gap: number,
+      pillAlpha: number
+    ) => {
+      const el = floatingBarRef.current;
+      if (!el) return;
+      const padX = pillAlpha * 14;
+      const padY = pillAlpha * 7;
+      // Subtract padX and padY from translate3d so the inner text coordinates
+      // match (anchorRect.left, anchorRect.top - gap) with sub-pixel accuracy
+      const x = anchorRect.left - padX;
+      const y = anchorRect.top + gap - padY;
+      el.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+      el.style.padding = `${padY.toFixed(2)}px ${padX.toFixed(2)}px`;
+      el.style.backgroundColor = `rgba(250, 247, 245, ${(pillAlpha * 0.95).toFixed(3)})`;
+      el.style.borderColor = `rgba(214, 211, 209, ${(pillAlpha * 0.9).toFixed(3)})`;
+      el.style.boxShadow =
+        pillAlpha > 0.02
+          ? `0 ${(6 * pillAlpha).toFixed(1)}px ${(18 * pillAlpha).toFixed(1)}px -4px rgba(43, 37, 35, ${(0.12 * pillAlpha).toFixed(3)})`
+          : 'none';
+      el.style.backdropFilter =
+        pillAlpha > 0.04 ? `blur(${(pillAlpha * 8).toFixed(1)}px)` : 'none';
+    };
+
+    const tick = () => {
+      const anchor = prideBarAnchorRef.current;
+      if (!anchor) {
+        isAnimating = false;
+        return;
+      }
+
+      const rect = anchor.getBoundingClientRect();
+      const isPastTop = rect.top < STICKY_TOP;
+
+      if (isPastTop) {
+        // Keep pinned at STICKY_TOP while smoothly easing in the pill halo
+        const exactPinnedGap = STICKY_TOP - rect.top;
+        visualGap += (exactPinnedGap - visualGap) * 0.55;
+        currentPillAlpha += (1 - currentPillAlpha) * 0.22;
+      } else {
+        // Gliding back into original space: smoothly ease visualGap -> 0 and pillAlpha -> 0
+        visualGap += (0 - visualGap) * 0.2;
+        currentPillAlpha += (0 - currentPillAlpha) * 0.18;
+      }
+
+      const settledInOriginalSpace =
+        !isPastTop &&
+        Math.abs(visualGap) < 0.25 &&
+        currentPillAlpha < 0.012;
+
+      if (settledInOriginalSpace) {
+        visualGap = 0;
+        currentPillAlpha = 0;
+        setIsFloatingActive(false);
+        isAnimating = false;
+        rafId = null;
+        return;
+      }
+
+      setIsFloatingActive(true);
+      applyFloatingStyles(rect, visualGap, currentPillAlpha);
+      rafId = window.requestAnimationFrame(tick);
+    };
+
+    const handleScrollOrResize = () => {
+      const anchor = prideBarAnchorRef.current;
+      if (!anchor) return;
+      const rect = anchor.getBoundingClientRect();
+      const isPastTop = rect.top < STICKY_TOP;
+
+      if (isPastTop || isAnimating || currentPillAlpha > 0.01 || Math.abs(visualGap) > 0.2) {
+        if (!isAnimating) {
+          isAnimating = true;
+          setIsFloatingActive(true);
+          rafId = window.requestAnimationFrame(tick);
+        }
+      }
+    };
+
+    handleScrollOrResize();
+    window.addEventListener('scroll', handleScrollOrResize, { passive: true });
+    window.addEventListener('resize', handleScrollOrResize);
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize);
+      window.removeEventListener('resize', handleScrollOrResize);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, []);
+
+  const renderPrideAndAccountBar = () => (
+    <div className="flex flex-wrap items-center gap-2 text-xs text-stone-600">
+      <span>Celebrated with endless sibling pride</span>
+      <span aria-hidden="true">·</span>
+      <span>Always {nickname || 'Best Big Sis'}</span>
+      {(onSwitchAccount || onSignOut) && (
+        <>
+          <span aria-hidden="true">·</span>
+          {onSwitchAccount && (
+            <button
+              onClick={onSwitchAccount}
+              className="text-stone-800 hover:text-stone-950 font-medium underline underline-offset-2 transition-colors cursor-pointer"
+            >
+              Switch Account
+            </button>
+          )}
+          {onSignOut && (
+            <>
+              <span aria-hidden="true">/</span>
+              <button
+                onClick={onSignOut}
+                className="text-rose-700 hover:text-rose-900 font-medium underline underline-offset-2 transition-colors cursor-pointer"
+              >
+                Log Out
+              </button>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+
   return (
     <section id="celebration" className="pt-8 pb-16 border-b border-stone-200/80">
+      {/* Smooth Floating Pill that glides directly into and out of its exact original space */}
+      <div
+        ref={floatingBarRef}
+        className={`fixed top-0 left-0 z-40 rounded-full border border-transparent will-change-transform ${
+          isFloatingActive ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        {renderPrideAndAccountBar()}
+      </div>
+
       <div className="max-w-6xl mx-auto px-6">
         {/* Split-Screen Hero Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
@@ -195,35 +344,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               )}
             </div>
 
-            {/* Quiet metadata + quick session controls */}
-            <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-stone-500">
-              <span>Celebrated with endless sibling pride</span>
-              <span aria-hidden="true">·</span>
-              <span>Always {nickname || 'Best Big Sis'}</span>
-              {(onSwitchAccount || onSignOut) && (
-                <>
-                  <span aria-hidden="true">·</span>
-                  {onSwitchAccount && (
-                    <button
-                      onClick={onSwitchAccount}
-                      className="text-stone-700 hover:text-stone-950 font-medium underline underline-offset-2 transition-colors cursor-pointer"
-                    >
-                      Switch Account
-                    </button>
-                  )}
-                  {onSignOut && (
-                    <>
-                      <span aria-hidden="true">/</span>
-                      <button
-                        onClick={onSignOut}
-                        className="text-rose-700 hover:text-rose-900 font-medium underline underline-offset-2 transition-colors cursor-pointer"
-                      >
-                        Log Out
-                      </button>
-                    </>
-                  )}
-                </>
-              )}
+            {/* Original Position Anchor for "Celebrated with endless sibling pride · Always Best Big Sis · Switch Account / Log Out" */}
+            <div ref={prideBarAnchorRef} className="mt-6 min-h-[24px]">
+              <div className={isFloatingActive ? 'invisible pointer-events-none' : ''}>
+                {renderPrideAndAccountBar()}
+              </div>
             </div>
           </div>
 

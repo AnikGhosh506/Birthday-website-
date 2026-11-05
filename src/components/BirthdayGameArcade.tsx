@@ -16,6 +16,12 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { romanticAudio } from '../utils/audioSynth';
+import {
+  loadArcadeScoresSync,
+  saveArcadeScoresPermanent,
+  loadArcadeScoresFromIdb,
+  PersistedArcadeScores,
+} from '../utils/persistentStorage';
 
 type GameMode = 'STARLIGHT_CATCHER' | 'MEMORY_MATCH' | 'WORD_CIPHER';
 type GameState = 'TITLE_MENU' | 'PLAYING' | 'PAUSED' | 'GAME_OVER';
@@ -152,12 +158,13 @@ const WORD_PUZZLES: WordPuzzle[] = [
 
 function scrambleWord(word: string): string[] {
   const arr = word.split('');
-  for (let attempt = 0; attempt < 10; attempt++) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    if (arr.join('') !== word) break;
+  // Deterministic scramble so refreshing the page does not randomly reshuffle the tiles
+  for (let i = 0; i < arr.length; i++) {
+    const swapIdx = (i * 3 + 1) % arr.length;
+    [arr[i], arr[swapIdx]] = [arr[swapIdx], arr[i]];
+  }
+  if (arr.join('') === word && arr.length > 1) {
+    [arr[0], arr[arr.length - 1]] = [arr[arr.length - 1], arr[0]];
   }
   return arr;
 }
@@ -169,23 +176,84 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
   bonusUnlocked = false,
 }) => {
   const [activeMode, setActiveMode] = useState<GameMode>('STARLIGHT_CATCHER');
-  const [totalArcadePoints, setTotalArcadePoints] = useState<number>(() => {
-    try {
-      return Number(localStorage.getItem('amore_arcade_points') || '0');
-    } catch {
-      return 0;
-    }
-  });
 
-  const addArcadePoints = useCallback((pts: number) => {
-    setTotalArcadePoints((prev) => {
-      const next = prev + pts;
-      try {
-        localStorage.setItem('amore_arcade_points', String(next));
-      } catch {}
-      return next;
-    });
+  const initialPersisted = useRef<PersistedArcadeScores>(loadArcadeScoresSync());
+
+  const [totalArcadePoints, setTotalArcadePoints] = useState<number>(
+    () => initialPersisted.current.totalArcadePoints
+  );
+  const [highScore, setHighScore] = useState<number>(
+    () => initialPersisted.current.catcherHighScore
+  );
+  const [memoryBestMoves, setMemoryBestMoves] = useState<number | null>(
+    () => initialPersisted.current.memoryBestMoves
+  );
+  const [solvedCount, setSolvedCount] = useState<number>(
+    () => initialPersisted.current.cipherSolvedCount
+  );
+  const [puzzleIndex, setPuzzleIndex] = useState<number>(
+    () => initialPersisted.current.cipherPuzzleIndex
+  );
+
+  // Keep a mutable ref of all persisted scores so updates from any game mode save atomically
+  const scoresRef = useRef<PersistedArcadeScores>(initialPersisted.current);
+
+  const updatePersistedScores = useCallback((partial: Partial<PersistedArcadeScores>) => {
+    const next: PersistedArcadeScores = {
+      ...scoresRef.current,
+      ...partial,
+    };
+    scoresRef.current = next;
+    saveArcadeScoresPermanent(next);
   }, []);
+
+  // Hydrate from IndexedDB on mount (taking the best saved records so refresh never resets scores)
+  useEffect(() => {
+    let mounted = true;
+    void loadArcadeScoresFromIdb().then((idbScores) => {
+      if (!mounted || !idbScores) return;
+      const merged: PersistedArcadeScores = {
+        totalArcadePoints: Math.max(
+          scoresRef.current.totalArcadePoints,
+          idbScores.totalArcadePoints || 0
+        ),
+        catcherHighScore: Math.max(
+          scoresRef.current.catcherHighScore,
+          idbScores.catcherHighScore || 0
+        ),
+        memoryBestMoves:
+          scoresRef.current.memoryBestMoves !== null && idbScores.memoryBestMoves !== null
+            ? Math.min(scoresRef.current.memoryBestMoves, idbScores.memoryBestMoves)
+            : scoresRef.current.memoryBestMoves ?? idbScores.memoryBestMoves ?? null,
+        cipherSolvedCount: Math.max(
+          scoresRef.current.cipherSolvedCount,
+          idbScores.cipherSolvedCount || 0
+        ),
+        cipherPuzzleIndex: Math.max(
+          scoresRef.current.cipherPuzzleIndex,
+          idbScores.cipherPuzzleIndex || 0
+        ),
+      };
+      scoresRef.current = merged;
+      setTotalArcadePoints(merged.totalArcadePoints);
+      setHighScore(merged.catcherHighScore);
+      setMemoryBestMoves(merged.memoryBestMoves);
+      setSolvedCount(merged.cipherSolvedCount);
+      setPuzzleIndex(merged.cipherPuzzleIndex);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const addArcadePoints = useCallback(
+    (pts: number) => {
+      const nextTotal = scoresRef.current.totalArcadePoints + pts;
+      setTotalArcadePoints(nextTotal);
+      updatePersistedScores({ totalArcadePoints: nextTotal });
+    },
+    [updatePersistedScores]
+  );
 
   // =========================================================
   // GAME 1: 3D STARLIGHT CATCHER (THREE.JS WEBGL 3D SCENE)
@@ -193,13 +261,6 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
   const mount3DRef = useRef<HTMLDivElement | null>(null);
   const [catcherState, setCatcherState] = useState<GameState>('TITLE_MENU');
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState<number>(() => {
-    try {
-      return Number(localStorage.getItem('amore_catcher_highscore') || '0');
-    } catch {
-      return 0;
-    }
-  });
   const [lives, setLives] = useState(3);
   const [combo, setCombo] = useState(1);
   const [wave, setWave] = useState(1);
@@ -634,13 +695,10 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
               });
 
               if (state.lives <= 0) {
-                if (state.score > highScore) {
+                if (state.score > scoresRef.current.catcherHighScore) {
                   setHighScore(state.score);
-                  try {
-                    localStorage.setItem('amore_catcher_highscore', String(state.score));
-                  } catch {}
+                  updatePersistedScores({ catcherHighScore: state.score });
                 }
-                addArcadePoints(state.score);
                 setCatcherState('GAME_OVER');
                 break;
               }
@@ -681,6 +739,19 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
               setScore(state.score);
               setCombo(state.combo);
               setCaughtCount(state.caughtCount);
+
+              // Immediately persist new high score and arcade points so refreshing never loses progress
+              const nextTotalPts = scoresRef.current.totalArcadePoints + earned;
+              const nextHigh = Math.max(scoresRef.current.catcherHighScore, state.score);
+              setTotalArcadePoints(nextTotalPts);
+              if (nextHigh !== scoresRef.current.catcherHighScore) {
+                setHighScore(nextHigh);
+              }
+              updatePersistedScores({
+                totalArcadePoints: nextTotalPts,
+                catcherHighScore: nextHigh,
+              });
+
               romanticAudio.playCatchChime(state.combo);
               spawn3DBurst(drawX, item.y, pColor);
               setLastCatchBanner({
@@ -754,7 +825,7 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
       envMap.dispose();
       renderer.dispose();
     };
-  }, [activeMode, catcherState, highScore, addArcadePoints]);
+  }, [activeMode, catcherState, updatePersistedScores]);
 
   const handle3DPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (catcherState !== 'PLAYING' || !mount3DRef.current) return;
@@ -770,25 +841,25 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
   const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
   const [memoryMoves, setMemoryMoves] = useState(0);
   const [matchedCount, setMatchedCount] = useState(0);
-  const [memoryBestMoves, setMemoryBestMoves] = useState<number | null>(() => {
-    try {
-      const saved = localStorage.getItem('amore_memory_best');
-      return saved ? Number(saved) : null;
-    } catch {
-      return null;
-    }
-  });
   const [isMemoryLocked, setIsMemoryLocked] = useState(false);
 
-  const initMemoryGame = useCallback(() => {
+  const initMemoryGame = useCallback((shuffleRandomly = false) => {
     const deck: MemoryCard[] = [];
     MEMORY_PAIRS.forEach((pair) => {
       deck.push({ ...pair, uid: `${pair.pairId}-a`, isFlipped: false, isMatched: false });
       deck.push({ ...pair, uid: `${pair.pairId}-b`, isFlipped: false, isMatched: false });
     });
-    for (let i = deck.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [deck[i], deck[j]] = [deck[j], deck[i]];
+    if (shuffleRandomly) {
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+    } else {
+      // Deterministic initial layout so refreshing doesn't rearrange the table unless Reset is clicked
+      for (let i = 0; i < deck.length; i++) {
+        const j = (i * 5 + 3) % deck.length;
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
     }
     setMemoryCards(deck);
     setFlippedIndices([]);
@@ -798,7 +869,7 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
   }, []);
 
   useEffect(() => {
-    initMemoryGame();
+    initMemoryGame(false);
   }, [initMemoryGame]);
 
   const handleCardClick = (index: number) => {
@@ -836,11 +907,10 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
           if (nextMatched === MEMORY_PAIRS.length) {
             romanticAudio.playCelebrationChime();
             confetti({ particleCount: 65, spread: 70, origin: { y: 0.7 } });
-            if (memoryBestMoves === null || nextMoves < memoryBestMoves) {
+            const prevBest = scoresRef.current.memoryBestMoves;
+            if (prevBest === null || nextMoves < prevBest) {
               setMemoryBestMoves(nextMoves);
-              try {
-                localStorage.setItem('amore_memory_best', String(nextMoves));
-              } catch {}
+              updatePersistedScores({ memoryBestMoves: nextMoves });
             }
           }
         }, 280);
@@ -861,13 +931,11 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
   // =========================================================
   // GAME 3: 3D WORD CIPHER (EXTRUDED KEYCAP PUZZLE)
   // =========================================================
-  const [puzzleIndex, setPuzzleIndex] = useState(0);
   const currentPuzzle = WORD_PUZZLES[puzzleIndex % WORD_PUZZLES.length];
   const [scrambledPool, setScrambledPool] = useState<{ char: string; used: boolean }[]>([]);
   const [guessedIndices, setGuessedIndices] = useState<number[]>([]);
   const [hintTier, setHintTier] = useState(0);
   const [wordSolved, setWordSolved] = useState(false);
-  const [solvedCount, setSolvedCount] = useState(0);
 
   const loadWordPuzzle = useCallback((idx: number) => {
     const target = WORD_PUZZLES[idx % WORD_PUZZLES.length].word;
@@ -898,8 +966,14 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
     const candidate = nextGuessed.map((i) => nextPool[i].char).join('');
     if (candidate === currentPuzzle.word) {
       setWordSolved(true);
-      setSolvedCount((c) => c + 1);
-      addArcadePoints(75);
+      const nextSolved = scoresRef.current.cipherSolvedCount + 1;
+      const nextTotalPts = scoresRef.current.totalArcadePoints + 75;
+      setSolvedCount(nextSolved);
+      setTotalArcadePoints(nextTotalPts);
+      updatePersistedScores({
+        cipherSolvedCount: nextSolved,
+        totalArcadePoints: nextTotalPts,
+      });
       romanticAudio.playMatchSuccess();
       confetti({ particleCount: 45, spread: 55, origin: { y: 0.75 } });
     } else if (candidate.length === currentPuzzle.word.length) {
@@ -959,7 +1033,9 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
 
   const handleNextWord = () => {
     romanticAudio.playSoftClick();
-    setPuzzleIndex((prev) => prev + 1);
+    const nextIdx = puzzleIndex + 1;
+    setPuzzleIndex(nextIdx);
+    updatePersistedScores({ cipherPuzzleIndex: nextIdx });
   };
 
   const getLivesStatusText = () => {
@@ -1328,7 +1404,7 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
                 <button
                   onClick={() => {
                     romanticAudio.playSoftClick();
-                    initMemoryGame();
+                    initMemoryGame(true);
                   }}
                   className="px-3.5 py-2 text-xs font-medium bg-emerald-950/90 hover:bg-emerald-900 text-emerald-100 border border-emerald-700/60 rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                 >
@@ -1416,7 +1492,7 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
                 <button
                   onClick={() => {
                     romanticAudio.playSoftClick();
-                    initMemoryGame();
+                    initMemoryGame(true);
                   }}
                   className="px-4 py-2.5 text-xs font-semibold bg-stone-900 text-white hover:bg-stone-800 rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 btn-3d-dark"
                 >

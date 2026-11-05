@@ -73,6 +73,46 @@ export const DEFAULT_BIRTHDAY_DATA: PersonalizationData = {
       tag: "Role Model",
       imageUrl: "",
     },
+    {
+      id: "mem-7",
+      title: "3:30 AM Cinema, Magnum & Monster Nights",
+      date: "Pujo Late Nights",
+      location: "Night Show & Home",
+      caption:
+        "Coming back home at 3:30 AM after pandal hopping and cinema, eating Magnum ice cream and Monster energy drink, and immediately texting you: 'Tui khabi?'",
+      tag: "Inside Jokes",
+      imageUrl: "",
+    },
+    {
+      id: "mem-8",
+      title: "Durga Puja & Kali Puja Plans in DGP",
+      date: "Festive Season",
+      location: "Durgapur & Kolkata",
+      caption:
+        "Planning our Durga Puja and Kali Puja meetups around your NIT holidays—and holding you to your promise: 'Khawabo chol kali pujoi!'",
+      tag: "Sisterhood",
+      imageUrl: "",
+    },
+    {
+      id: "mem-9",
+      title: "AI Models, Claude Pro & Exhibition Ideas",
+      date: "Tech & Brainstorming",
+      location: "WhatsApp Late Chats",
+      caption:
+        "From flexing Claude Pro, Gemini Pro, and 5TB Drive storage to asking you to pick the best school exhibition idea with pros and cons.",
+      tag: "Inside Jokes",
+      imageUrl: "",
+    },
+    {
+      id: "mem-10",
+      title: "From NIT to Bangalore: Big Sis Pride",
+      date: "Career Milestone",
+      location: "NIT & Bangalore",
+      caption:
+        "Watching you crush your exams at NIT and land your Bangalore internship makes me the proudest younger brother ever. Waiting for my treat!",
+      tag: "Role Model",
+      imageUrl: "",
+    },
   ],
   letters: [
     {
@@ -189,33 +229,59 @@ export const DEFAULT_BIRTHDAY_DATA: PersonalizationData = {
       ],
       correctIndex: 1,
       explanation:
-        "28th May is officially the best day on the calendar (though celebrating you every day is also valid!).",
+        "28th May is officially Queen Big Sis Day on the calendar!",
     },
     {
       id: "q-2",
-      question: "What is the best perk of having Atrayee as an older sister?",
+      question: "What is Anik's #1 dramatic complaint whenever he texts Didi on WhatsApp?",
       options: [
-        "Top-tier life advice and honest pep talks",
-        "Having a built-in protector and best friend for life",
-        "Immaculate taste in food, music, and style",
-        "All of the above (and a thousand more!)",
+        "Why is my internet slow?",
+        "Ekta call o koris ni! 😭😭 (You didn't even call once!)",
+        "Where is my charger?",
+        "Why is homework so long?",
       ],
-      correctIndex: 3,
+      correctIndex: 1,
       explanation:
-        "Trick question—you truly are the ultimate all-in-one older sister!",
+        "Are sotti! 'Ekta call o koris ni! Kal call koris rate! Bujhli?' is Anik's signature line!",
     },
     {
       id: "q-3",
-      question: "What is our undefeated sibling bonding activity?",
+      question: "When Anik came back home at 3:30 AM after watching cinema, what did he eat & flex to Didi?",
       options: [
-        "Laughing at inside jokes nobody else understands",
-        "Sharing delicious food & late-night chats",
-        "Roasting each other with love and then teaming up immediately",
-        "All of the above!",
+        "Biryani & Coke",
+        "Magnum ice cream & Monster energy drink ('Tui khabi?')",
+        "Maggi & Coffee",
+        "Pizza & Momos",
       ],
-      correctIndex: 3,
+      correctIndex: 1,
       explanation:
-        "Nothing beats our sisterhood duo—partner in crime for life!",
+        "'3:30 te firechi, Magnum khelam, tui khabi? Monster khelam!' — legendary 3:30 AM routine!",
+    },
+    {
+      id: "q-4",
+      question: "Which two massive movies releasing on 18th December did Didi & Anik hype up in their chat?",
+      options: [
+        "Batman 2 & Superman",
+        "Dune 3 & Avengers: Doomsday",
+        "Avatar 4 & Star Wars",
+        "Fast & Furious 11 & Jurassic World",
+      ],
+      correctIndex: 1,
+      explanation:
+        "Didi reminded Anik to watch Spider-Man & The Odyssey, plus Dune 3 and Avengers: Doomsday dropping on 18th December!",
+    },
+    {
+      id: "q-5",
+      question: "Why did Anik secretly ask for Didi's Gmail at 3:26 AM in the morning?",
+      options: [
+        "To send her a PDF homework assignment",
+        "To lock this private birthday website exclusively to her Gmail!",
+        "To sign up for a newsletter",
+        "To share a Google Doc for school",
+      ],
+      correctIndex: 1,
+      explanation:
+        "'Tor gmail de, toke ekta site patthacchi jate oi site sudhu tui e access korte paris bujhli?' — mission accomplished!",
     },
   ],
   adoreReasons: [
@@ -281,3 +347,139 @@ export const DEFAULT_BIRTHDAY_DATA: PersonalizationData = {
     },
   ],
 };
+
+// Rich 18-question pool used to rotate 5 unique questions on every reload while Gemini Flash-Lite generates fresh AI questions
+export const EXTENDED_QUIZ_POOL = [
+  ...DEFAULT_BIRTHDAY_DATA.quiz,
+  {
+    id: "pool-6",
+    question: "Where did Atrayee (Didi) land her internship while Debangshu got his Axis Bank internship in Mumbai?",
+    options: [
+      "Hyderabad",
+      "Bangalore!",
+      "Pune",
+      "Delhi NCR",
+    ],
+    correctIndex: 1,
+    explanation:
+      "Didi in Bangalore and Debangshu at Axis Bank in Mumbai — power duo! ('Tor intern er ar biyer misti ta ki eksathei khaoyabi?')",
+  },
+  {
+    id: "pool-7",
+    question: "Which AI & cloud subscriptions did Anik proudly flex to Didi after logging into Dada's account?",
+    options: [
+      "Netflix & Spotify Premium",
+      "Claude Pro, Gemini Pro & 5TB Google Drive storage!",
+      "Canva Pro & Adobe Cloud",
+      "Xbox Game Pass & Discord Nitro",
+    ],
+    correctIndex: 1,
+    explanation:
+      "'Hey claude er pro subscription peye gelam! Gemini er pro o ache, ar drive e 5tb storage!' — and Didi immediately said: 'shoitan tui, amakeo de!'",
+  },
+  {
+    id: "pool-8",
+    question: "When Anik asked Didi to pick a school exhibition project idea from ChatGPT's list, which one did Didi advise him to choose?",
+    options: [
+      "The first one because it had hardware",
+      "The last one because its complexity was lower and easier than training a full neural network!",
+      "Skip the exhibition completely",
+      "Build a rocket model instead",
+    ],
+    correctIndex: 1,
+    explanation:
+      "Smart big sis advice: 'toke toh gpt last er ta korte bolche, otai kor, complexity kom otar!'",
+  },
+  {
+    id: "pool-9",
+    question: "Why was Anik guarding his phone from Maa with Bluetooth earphones on 26th September?",
+    options: [
+      "He was watching a cricket match",
+      "An AI model was training in the background since the previous day and he was scared the tab would get closed!",
+      "He was downloading a movie",
+      "He was updating his phone software",
+    ],
+    correctIndex: 1,
+    explanation:
+      "'Model training e onek time lage ar agerdin theke ami already onekta train kore niyechilam to close korar bhoye!' — true AI engineer dedication!",
+  },
+  {
+    id: "pool-10",
+    question: "What festival treat promise did Didi make to Anik in their WhatsApp chat?",
+    options: [
+      "Khawabo chol Kali Pujoi! (I'll treat you during Kali Puja!)",
+      "New Year party in Goa",
+      "Christmas cake baking",
+      "Holi sweets in March",
+    ],
+    correctIndex: 0,
+    explanation:
+      "Screenshot saved forever: 'khawabo chol kali pujoi' — no backing out of this treat, Didi!",
+  },
+  {
+    id: "pool-11",
+    question: "What was Didi's hilarious reaction when Anik asked if she could buy 'Robux' for his friend?",
+    options: [
+      "Sure, sending right now!",
+      "'wtf is that' 😂",
+      "I also play Roblox every day",
+      "Ask Dada instead",
+    ],
+    correctIndex: 1,
+    explanation:
+      "Didi's instant 'wtf is that' followed by Anik explaining 'Ota Roblox er currency' is peak sibling comedy!",
+  },
+  {
+    id: "pool-12",
+    question: "What is the best perk of having Atrayee as an older sister?",
+    options: [
+      "Top-tier life & project advice whenever Anik is confused",
+      "Having a built-in protector and best friend for life",
+      "Immaculate taste in movies, food, and style",
+      "All of the above (and a thousand more!)",
+    ],
+    correctIndex: 3,
+    explanation:
+      "Trick question—you truly are the ultimate all-in-one Best Big Sis!",
+  },
+  {
+    id: "pool-13",
+    question: "What did Anik say about entering 9th grade ('9th e uthe')?",
+    options: [
+      "It is super easy and relaxing",
+      "'9th e uthe chap bede gelo!' (The pressure/workload got real in 9th!)",
+      "No exams at all this year",
+      "School starts at 12 PM",
+    ],
+    correctIndex: 1,
+    explanation:
+      "Between school, exhibitions, and 3:30 AM cinema routines, '9th e uthe chap bede gelo!'",
+  },
+  {
+    id: "pool-14",
+    question: "Which city were Anik and family visiting for Durga Puja pandal hopping ('amrao dgp jacchi')?",
+    options: [
+      "Durgapur (DGP) & Kolkata",
+      "Siliguri",
+      "Darjeeling",
+      "Puri",
+    ],
+    correctIndex: 0,
+    explanation:
+      "Hoping NIT holidays line up so we can hang out in DGP and Kolkata during Pujo!",
+  },
+  {
+    id: "pool-15",
+    question: "What is our undefeated sibling bonding activity whenever we finally catch up?",
+    options: [
+      "Roasting each other with love ('shoitan tui' / 'sala') and laughing immediately",
+      "Debriefing college, internships, movies, and tech",
+      "Planning food treats and late-night calls",
+      "All of the above!",
+    ],
+    correctIndex: 3,
+    explanation:
+      "Nothing beats our brother-sister duo — always in your corner, Didi!",
+  },
+];
+

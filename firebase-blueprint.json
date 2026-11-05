@@ -32,12 +32,55 @@
         }
       },
       "required": ["authorUid", "authorEmail", "wishText", "createdAt"]
+    },
+    "ChatLogEntry": {
+      "title": "ChatLogEntry",
+      "description": "Permanent record of a chat exchange between Atrayee and Anik, readable only by Anik.",
+      "type": "object",
+      "properties": {
+        "authorUid": {
+          "type": "string",
+          "description": "UID of the authenticated user who sent the message",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified email address of the authenticated user",
+          "minLength": 5,
+          "maxLength": 100
+        },
+        "userMessage": {
+          "type": "string",
+          "description": "The message sent in the chat",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "anikReply": {
+          "type": "string",
+          "description": "The short, clear reply from Anik",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation"
+        }
+      },
+      "required": ["authorUid", "authorEmail", "userMessage", "anikReply", "createdAt"]
     }
   },
   "firestore": {
     "/wishes/{wishId}": {
       "schema": { "$ref": "#/entities/WishEntry" },
-      "description": "Private birthday wishes accessible exclusively to atrayeede0025@gmail.com"
+      "description": "Private birthday wishes accessible exclusively to authorized accounts"
+    },
+    "/chatLogs/{logId}": {
+      "schema": { "$ref": "#/entities/ChatLogEntry" },
+      "description": "Permanent append-only chat archive where Atrayee can create logs on send, but cannot read, update, or delete them"
     }
   }
 }

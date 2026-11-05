@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { PersonalizationData, Memory, LoveCoupon } from '../types';
+import React, { useState, useEffect } from 'react';
+import { PersonalizationData, Memory } from '../types';
 import { X, Save, RotateCcw, Copy, Check, Sparkles, Image, Plus, Trash2 } from 'lucide-react';
 import { romanticAudio } from '../utils/audioSynth';
+import { compressImageFile } from '../utils/persistentStorage';
 
 interface PersonalizeModalProps {
   isOpen: boolean;
@@ -21,6 +22,12 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
   const [formData, setFormData] = useState<PersonalizationData>(data);
   const [copiedLink, setCopiedLink] = useState(false);
   const [activeTab, setActiveTab] = useState<'basics' | 'memories' | 'coupons'>('basics');
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(data);
+    }
+  }, [isOpen, data]);
 
   if (!isOpen) return null;
 
@@ -292,7 +299,7 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
                     />
 
                     {/* Photo input */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <label className="px-3 py-1.5 text-xs font-medium text-stone-700 bg-white border border-stone-300 rounded hover:bg-stone-50 cursor-pointer flex items-center gap-1.5">
                         <Image className="w-3.5 h-3.5" />
                         <span>{mem.imageUrl ? 'Change Photo' : 'Upload Photo'}</span>
@@ -300,24 +307,34 @@ export const PersonalizeModal: React.FC<PersonalizeModalProps> = ({
                           type="file"
                           accept="image/*"
                           className="hidden"
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              const r = new FileReader();
-                              r.onload = () => {
-                                if (typeof r.result === 'string') {
-                                  handleUpdateMemory(mem.id, { imageUrl: r.result });
-                                }
-                              };
-                              r.readAsDataURL(file);
+                              try {
+                                const compressed = await compressImageFile(file, 1400, 0.85);
+                                handleUpdateMemory(mem.id, { imageUrl: compressed });
+                              } catch (err) {
+                                console.error('Failed to process photo', err);
+                              }
+                              e.target.value = '';
                             }
                           }}
                         />
                       </label>
                       {mem.imageUrl && (
-                        <span className="text-[11px] text-emerald-600 font-medium">
-                          Photo uploaded ✓
-                        </span>
+                        <>
+                          <span className="text-[11px] text-emerald-600 font-medium">
+                            Photo saved ✓
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateMemory(mem.id, { imageUrl: '' })}
+                            className="px-2.5 py-1 text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded inline-flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Remove Photo</span>
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>

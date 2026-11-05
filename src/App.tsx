@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DEFAULT_BIRTHDAY_DATA } from './data/defaultData';
-import { PersonalizationData, LoveCoupon } from './types';
+import { PersonalizationData, LoveCoupon, Memory } from './types';
 import { romanticAudio } from './utils/audioSynth';
+import { idbGet, idbSet } from './utils/persistentStorage';
 import { AuthGate } from './components/AuthGate';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
@@ -11,9 +12,39 @@ import { LoveLettersSection } from './components/LoveLettersSection';
 import { VouchersSection } from './components/VouchersSection';
 import { ReasonsDeck } from './components/ReasonsDeck';
 import { CoupleQuiz } from './components/CoupleQuiz';
+import { AnikAIChatSection } from './components/AnikAIChatSection';
 import { LanternWishCanvas } from './components/LanternWishCanvas';
 import { Footer } from './components/Footer';
 import { PersonalizeModal } from './components/PersonalizeModal';
+
+const IDB_DATA_KEY = 'amore_birthday_data_permanent_v1';
+const IDB_IMAGES_KEY = 'amore_memory_images_permanent_v1';
+
+// Ensure all 10 default memory slots (mem-1..mem-10) exist even if storage had an older 6-slot list
+function mergeWithAllDefaultMemories(savedMemories?: Memory[]): Memory[] {
+  if (!Array.isArray(savedMemories) || savedMemories.length === 0) {
+    return DEFAULT_BIRTHDAY_DATA.memories;
+  }
+  const byId = new Map<string, Memory>();
+  savedMemories.forEach((m) => byId.set(m.id, m));
+
+  const merged: Memory[] = DEFAULT_BIRTHDAY_DATA.memories.map((defMem) => {
+    const existing = byId.get(defMem.id);
+    if (existing) {
+      byId.delete(defMem.id);
+      return {
+        ...defMem,
+        ...existing,
+        imageUrl: existing.imageUrl ?? defMem.imageUrl,
+      };
+    }
+    return defMem;
+  });
+
+  // Append any custom user-created memories
+  byId.forEach((customMem) => merged.push(customMem));
+  return merged;
+}
 
 export default function App() {
   const [data, setData] = useState<PersonalizationData>(() => {
@@ -25,14 +56,18 @@ export default function App() {
         const giftParam = params.get('gift');
         if (giftParam) {
           const parsed = JSON.parse(decodeURIComponent(giftParam));
-          return { ...DEFAULT_BIRTHDAY_DATA, ...parsed };
+          return {
+            ...DEFAULT_BIRTHDAY_DATA,
+            ...parsed,
+            memories: mergeWithAllDefaultMemories(parsed.memories),
+          };
         }
       } catch (err) {
         console.error('Failed to parse URL hash data', err);
       }
     }
 
-    // 2. Check localStorage
+    // 2. Check localStorage synchronously for instant first paint
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('amore_birthday_data');
@@ -45,9 +80,13 @@ export default function App() {
           }
           if (parsed.boyfriendName === 'Arpita') {
             parsed.boyfriendName = 'Anik';
-            localStorage.setItem('amore_birthday_data', JSON.stringify({ ...DEFAULT_BIRTHDAY_DATA, ...parsed }));
           }
-          return { ...DEFAULT_BIRTHDAY_DATA, ...parsed };
+          return {
+            ...DEFAULT_BIRTHDAY_DATA,
+            ...parsed,
+            memories: mergeWithAllDefaultMemories(parsed.memories),
+            quiz: DEFAULT_BIRTHDAY_DATA.quiz,
+          };
         }
       } catch (err) {
         console.error('Failed to read localStorage data', err);
@@ -60,13 +99,68 @@ export default function App() {
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [isPersonalizeOpen, setIsPersonalizeOpen] = useState(false);
 
-  // Sync to localStorage
+  // Hydrate permanent data and memory photos from IndexedDB on mount so photos stay forever across refreshes
+  useEffect(() => {
+    let mounted = true;
+    async function restorePermanentStorage() {
+      const [savedIdbData, savedImageMap] = await Promise.all([
+        idbGet<PersonalizationData>(IDB_DATA_KEY),
+        idbGet<Record<string, string>>(IDB_IMAGES_KEY),
+      ]);
+      if (!mounted) return;
+
+      if (savedIdbData || savedImageMap) {
+        setData((prev) => {
+          const base = savedIdbData ? { ...DEFAULT_BIRTHDAY_DATA, ...savedIdbData } : prev;
+          if (base.boyfriendName === 'Arpita') {
+            base.boyfriendName = 'Anik';
+          }
+          const fullMemories = mergeWithAllDefaultMemories(base.memories);
+          const mergedMemories = fullMemories.map((mem) => {
+            if (savedImageMap && Object.prototype.hasOwnProperty.call(savedImageMap, mem.id)) {
+              return { ...mem, imageUrl: savedImageMap[mem.id] };
+            }
+            return mem;
+          });
+          return {
+            ...base,
+            memories: mergedMemories,
+            quiz: DEFAULT_BIRTHDAY_DATA.quiz,
+          };
+        });
+      }
+    }
+    void restorePermanentStorage();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Persist to both IndexedDB (unlimited photo capacity) and localStorage
   const handleSaveData = (newData: PersonalizationData) => {
     setData(newData);
+
+    // 1. Save full data & image map permanently to IndexedDB
+    const imageMap: Record<string, string> = {};
+    newData.memories.forEach((m) => {
+      imageMap[m.id] = m.imageUrl || '';
+    });
+    void idbSet(IDB_DATA_KEY, newData);
+    void idbSet(IDB_IMAGES_KEY, imageMap);
+
+    // 2. Save to localStorage (with automatic fallback if photos exceed 5MB localStorage quota)
     try {
       localStorage.setItem('amore_birthday_data', JSON.stringify(newData));
-    } catch (e) {
-      console.warn('Could not save to localStorage', e);
+    } catch {
+      try {
+        const lightweightData: PersonalizationData = {
+          ...newData,
+          memories: newData.memories.map((m) => ({ ...m, imageUrl: '' })),
+        };
+        localStorage.setItem('amore_birthday_data', JSON.stringify(lightweightData));
+      } catch (e) {
+        console.warn('Could not save to localStorage', e);
+      }
     }
   };
 
@@ -76,6 +170,8 @@ export default function App() {
       try {
         localStorage.removeItem('amore_birthday_data');
       } catch {}
+      void idbSet(IDB_DATA_KEY, DEFAULT_BIRTHDAY_DATA);
+      void idbSet(IDB_IMAGES_KEY, {});
       romanticAudio.playSoftClick();
     }
   };
@@ -86,10 +182,36 @@ export default function App() {
   };
 
   const handleUpdateMemoryImage = (id: string, dataUrl: string) => {
-    const updatedMemories = data.memories.map((m) =>
-      m.id === id ? { ...m, imageUrl: dataUrl } : m
-    );
-    handleSaveData({ ...data, memories: updatedMemories });
+    setData((prev) => {
+      const updatedMemories = prev.memories.map((m) =>
+        m.id === id ? { ...m, imageUrl: dataUrl } : m
+      );
+      const nextData = { ...prev, memories: updatedMemories };
+
+      const imageMap: Record<string, string> = {};
+      nextData.memories.forEach((m) => {
+        imageMap[m.id] = m.imageUrl || '';
+      });
+      void idbSet(IDB_DATA_KEY, nextData);
+      void idbSet(IDB_IMAGES_KEY, imageMap);
+
+      try {
+        localStorage.setItem('amore_birthday_data', JSON.stringify(nextData));
+      } catch {
+        try {
+          const lightweightData: PersonalizationData = {
+            ...nextData,
+            memories: nextData.memories.map((m) => ({ ...m, imageUrl: '' })),
+          };
+          localStorage.setItem('amore_birthday_data', JSON.stringify(lightweightData));
+        } catch {}
+      }
+      return nextData;
+    });
+  };
+
+  const handleRemoveMemoryImage = (id: string) => {
+    handleUpdateMemoryImage(id, '');
   };
 
   const handleAddMemory = () => {
@@ -157,10 +279,11 @@ export default function App() {
               bonusUnlocked={hasBonusCoupon}
             />
 
-            {/* Memory Lane Scrapbook */}
+            {/* Memory Lane Scrapbook (10 Polaroid Slots + Permanent IndexedDB Storage) */}
             <TimelineSection
               memories={data.memories}
               onUpdateMemoryImage={handleUpdateMemoryImage}
+              onRemoveMemoryImage={handleRemoveMemoryImage}
               onAddMemory={handleAddMemory}
             />
 
@@ -185,14 +308,25 @@ export default function App() {
               girlfriendName={data.girlfriendName}
             />
 
-            {/* Sisterhood Trivia Quiz */}
+            {/* AI-Powered 5-Question Sisterhood Trivia Quiz */}
             <CoupleQuiz
               quiz={data.quiz}
               girlfriendName={data.girlfriendName}
             />
 
-            {/* Night Sky of Floating Wishes Lanterns */}
-            <LanternWishCanvas />
+            {/* Sibling Chat Section (Didi responds to Anik; Anik responds to Didi) */}
+            <AnikAIChatSection
+              girlfriendName={data.girlfriendName}
+              boyfriendName={data.boyfriendName}
+              userEmail={userEmail}
+            />
+
+            {/* Night Sky of Floating Wishes Lanterns + Tap Lantern to Reveal Photo */}
+            <LanternWishCanvas
+              memories={data.memories}
+              onUpdateMemoryImage={handleUpdateMemoryImage}
+              onRemoveMemoryImage={handleRemoveMemoryImage}
+            />
           </main>
 
           {/* Footer with Dedicated Logout & Switch Account Section */}
@@ -218,5 +352,3 @@ export default function App() {
     </AuthGate>
   );
 }
-
-

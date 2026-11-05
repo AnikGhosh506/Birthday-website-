@@ -32,6 +32,13 @@ service cloud.firestore {
         );
     }
 
+    // Strictly only allow Anik's verified account to read the permanent chat database
+    function isAnikAdmin() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'arpitaghosh2167@gmail.com';
+    }
+
     function isValidWishEntry(data) {
       return data.keys().hasAll(['authorUid', 'authorEmail', 'wishText', 'createdAt'])
         && data.keys().hasOnly(['authorUid', 'authorEmail', 'wishText', 'createdAt'])
@@ -50,6 +57,27 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
+    function isValidChatLogEntry(data) {
+      return data.keys().hasAll(['authorUid', 'authorEmail', 'userMessage', 'anikReply', 'createdAt'])
+        && data.keys().hasOnly(['authorUid', 'authorEmail', 'userMessage', 'anikReply', 'createdAt'])
+        && data.authorUid is string
+        && data.authorUid.size() >= 1
+        && data.authorUid.size() <= 128
+        && data.authorUid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.authorUid == request.auth.uid
+        && data.authorEmail is string
+        && data.authorEmail.size() >= 5
+        && data.authorEmail.size() <= 100
+        && data.authorEmail == request.auth.token.email
+        && data.userMessage is string
+        && data.userMessage.size() >= 1
+        && data.userMessage.size() <= 2000
+        && data.anikReply is string
+        && data.anikReply.size() >= 1
+        && data.anikReply.size() <= 4000
+        && data.createdAt is timestamp;
+    }
+
     match /wishes/{wishId} {
       allow get: if isAuthorizedSister() && isValidId(wishId) && existing().authorUid == request.auth.uid;
       allow list: if isAuthorizedSister() && existing().authorUid == request.auth.uid;
@@ -59,6 +87,18 @@ service cloud.firestore {
         && incoming().createdAt == request.time;
       allow update: if false;
       allow delete: if isAuthorizedSister() && isValidId(wishId) && existing().authorUid == request.auth.uid;
+    }
+
+    // Permanent chat database: Atrayee can create logs when chatting, but CANNOT read, update, or delete them
+    match /chatLogs/{logId} {
+      allow get: if isAnikAdmin() && isValidId(logId) && existing().authorUid is string;
+      allow list: if isAnikAdmin() && existing().authorUid is string;
+      allow create: if isAuthorizedSister()
+        && isValidId(logId)
+        && isValidChatLogEntry(incoming())
+        && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }

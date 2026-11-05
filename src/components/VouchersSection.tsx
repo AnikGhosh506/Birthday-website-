@@ -149,12 +149,12 @@ export const VouchersSection: React.FC<VouchersSectionProps> = ({
               {/* Perforation dashed line */}
               <div className="relative border-b-2 border-dashed border-stone-200 my-1" />
 
-              {/* Coupon Bottom Action / Stamped Area */}
+              {/* Coupon Bottom Action / 3D Stamped Area */}
               <div className="p-6 pt-3 flex items-center justify-between">
                 {coupon.isRedeemed ? (
                   <div className="flex items-center justify-between w-full">
-                    {/* Redeemed Stamp Badge */}
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded border-2 border-rose-700 bg-rose-50/50 text-rose-800 rotate-[-2deg]">
+                    {/* 3D Embossed Redeemed Stamp Badge */}
+                    <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border-2 border-rose-700 bg-rose-50 text-rose-800 stamp-3d-redeemed">
                       <CheckCircle2 className="w-4 h-4 text-rose-700" />
                       <span className="font-mono text-xs font-bold uppercase tracking-wider">
                         REDEEMED · {coupon.redeemedDate || 'TODAY'}
@@ -164,22 +164,22 @@ export const VouchersSection: React.FC<VouchersSectionProps> = ({
                     <button
                       onClick={(e) => handleResetCoupon(coupon.id, e)}
                       title="Reset voucher to use again"
-                      className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-200/50 rounded transition-colors"
+                      className="p-2 text-stone-500 hover:text-stone-900 bg-white border border-stone-300 rounded-lg cursor-pointer tile-3d-extruded"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center justify-between w-full gap-3">
                     <span className="text-xs text-stone-500 font-sans">
                       Valid for {girlfriendName}
                     </span>
                     <button
                       onClick={() => handleRedeem(coupon)}
                       disabled={redeemingId === coupon.id}
-                      className="px-4 py-2 text-xs font-medium text-white bg-stone-900 rounded-lg hover:bg-stone-800 transition-colors shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                      className="px-5 py-2.5 text-xs sm:text-sm font-semibold text-white rounded-xl cursor-pointer inline-flex items-center gap-2 whitespace-nowrap shrink-0 btn-3d-redeem"
                     >
-                      <Gift className="w-3.5 h-3.5 text-rose-300" />
+                      <Gift className="w-4 h-4 text-amber-200 drop-shadow-xs" />
                       <span>{redeemingId === coupon.id ? 'Redeeming...' : 'Redeem Now'}</span>
                     </button>
                   </div>
