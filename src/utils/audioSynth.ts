@@ -323,6 +323,268 @@ class RomanticAudioEngine {
       osc.stop(now + delay + 0.35);
     });
   }
+
+  // Crisp, realistic balloon pop sound + celebratory sparkle chime
+  public playBalloonPop() {
+    this.initContext();
+    if (!this.ctx || !this.masterGain) return;
+    const now = this.ctx.currentTime;
+
+    // 1. Acoustic white-noise pop transient
+    const bufferSize = Math.floor(this.ctx.sampleRate * 0.085);
+    const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.25));
+    }
+
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = noiseBuffer;
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1100, now);
+    filter.Q.setValueAtTime(1.4, now);
+
+    const noiseGain = this.ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.65, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(this.masterGain);
+    noise.start(now);
+
+    // 2. Membrane pitch-drop snap
+    const snapOsc = this.ctx.createOscillator();
+    const snapGain = this.ctx.createGain();
+    snapOsc.type = 'triangle';
+    snapOsc.frequency.setValueAtTime(340, now);
+    snapOsc.frequency.exponentialRampToValueAtTime(55, now + 0.075);
+
+    snapGain.gain.setValueAtTime(0.45, now);
+    snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    snapOsc.connect(snapGain);
+    snapGain.connect(this.masterGain);
+    snapOsc.start(now);
+    snapOsc.stop(now + 0.085);
+
+    // 3. Tiny celebratory sparkle notes right after the pop
+    [880, 1174.66, 1567.98].forEach((freq, idx) => {
+      const delay = 0.04 + idx * 0.045;
+      const osc = this.ctx!.createOscillator();
+      const g = this.ctx!.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + delay);
+      g.gain.setValueAtTime(0.16, now + delay);
+      g.gain.exponentialRampToValueAtTime(0.0008, now + delay + 0.24);
+      osc.connect(g);
+      g.connect(this.masterGain!);
+      osc.start(now + delay);
+      osc.stop(now + delay + 0.25);
+    });
+  }
+
+  // Aerial firework shell burst: warm low-end boom + sparkling golden crackle
+  public playFireworkBurst() {
+    this.initContext();
+    if (!this.ctx || !this.masterGain) return;
+    const now = this.ctx.currentTime;
+
+    // 1. Deep aerial boom envelope
+    const boomOsc = this.ctx.createOscillator();
+    const boomGain = this.ctx.createGain();
+    boomOsc.type = 'sine';
+    boomOsc.frequency.setValueAtTime(140, now);
+    boomOsc.frequency.exponentialRampToValueAtTime(34, now + 0.36);
+
+    boomGain.gain.setValueAtTime(0.42, now);
+    boomGain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+
+    boomOsc.connect(boomGain);
+    boomGain.connect(this.masterGain);
+    boomOsc.start(now);
+    boomOsc.stop(now + 0.4);
+
+    // 2. Shimmering crackle noise burst
+    const bufferSize = Math.floor(this.ctx.sampleRate * 0.42);
+    const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const env = Math.exp(-i / (bufferSize * 0.32));
+      data[i] = (Math.random() * 2 - 1) * env;
+    }
+
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = noiseBuffer;
+
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(1850, now);
+    bp.Q.setValueAtTime(1.1, now);
+
+    const crackleGain = this.ctx.createGain();
+    crackleGain.gain.setValueAtTime(0.32, now);
+    crackleGain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+
+    noise.connect(bp);
+    bp.connect(crackleGain);
+    crackleGain.connect(this.masterGain);
+    noise.start(now);
+
+    // 3. High celestial star-chime overtones
+    [1046.5, 1318.51, 1567.98].forEach((freq, idx) => {
+      const delay = 0.05 + idx * 0.055;
+      const osc = this.ctx!.createOscillator();
+      const g = this.ctx!.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + delay);
+      g.gain.setValueAtTime(0.11, now + delay);
+      g.gain.exponentialRampToValueAtTime(0.0005, now + delay + 0.35);
+      osc.connect(g);
+      g.connect(this.masterGain!);
+      osc.start(now + delay);
+      osc.stop(now + delay + 0.36);
+    });
+  }
+
+  // Step 1 of Virtual Gift Unboxing: Silky satin ribbon untie swish + golden bell glissando
+  public playRibbonUntie() {
+    this.initContext();
+    if (!this.ctx || !this.masterGain) return;
+    const now = this.ctx.currentTime;
+
+    // 1. Silky satin ribbon slide (filtered noise sweep)
+    const bufferSize = Math.floor(this.ctx.sampleRate * 0.26);
+    const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const env = Math.sin((i / bufferSize) * Math.PI);
+      data[i] = (Math.random() * 2 - 1) * env;
+    }
+
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = noiseBuffer;
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(900, now);
+    filter.frequency.exponentialRampToValueAtTime(2800, now + 0.24);
+    filter.Q.setValueAtTime(1.8, now);
+
+    const swishGain = this.ctx.createGain();
+    swishGain.gain.setValueAtTime(0.28, now);
+    swishGain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+
+    noise.connect(filter);
+    filter.connect(swishGain);
+    swishGain.connect(this.masterGain);
+    noise.start(now);
+
+    // 2. Delicate 3-note golden ribbon chime (G5 -> B5 -> D6)
+    [783.99, 987.77, 1174.66].forEach((freq, idx) => {
+      const delay = 0.04 + idx * 0.065;
+      const osc = this.ctx!.createOscillator();
+      const g = this.ctx!.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + delay);
+      g.gain.setValueAtTime(0, now + delay);
+      g.gain.linearRampToValueAtTime(0.22, now + delay + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0008, now + delay + 0.45);
+      osc.connect(g);
+      g.connect(this.masterGain!);
+      osc.start(now + delay);
+      osc.stop(now + delay + 0.46);
+    });
+  }
+
+  // Step 2 of Virtual Gift Unboxing: Velvet lid pop + wrapping rustle + magical treasure chest arpeggio
+  public playGiftUnboxing() {
+    this.initContext();
+    if (!this.ctx || !this.masterGain) return;
+    const now = this.ctx.currentTime;
+
+    // 1. Warm velvet box lid pop (resonant low-mid thump + pitch rise)
+    const popOsc = this.ctx.createOscillator();
+    const popGain = this.ctx.createGain();
+    popOsc.type = 'sine';
+    popOsc.frequency.setValueAtTime(115, now);
+    popOsc.frequency.exponentialRampToValueAtTime(290, now + 0.11);
+
+    popGain.gain.setValueAtTime(0.48, now);
+    popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+    popOsc.connect(popGain);
+    popGain.connect(this.masterGain);
+    popOsc.start(now);
+    popOsc.stop(now + 0.15);
+
+    // 2. Crisp tissue/parchment paper unfold rustle
+    const bufferSize = Math.floor(this.ctx.sampleRate * 0.34);
+    const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const env = Math.exp(-i / (bufferSize * 0.35));
+      output[i] = (Math.random() * 2 - 1) * env;
+    }
+
+    const rustle = this.ctx.createBufferSource();
+    rustle.buffer = noiseBuffer;
+
+    const hp = this.ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.setValueAtTime(1600, now);
+
+    const rustleGain = this.ctx.createGain();
+    rustleGain.gain.setValueAtTime(0.3, now + 0.04);
+    rustleGain.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
+
+    rustle.connect(hp);
+    hp.connect(rustleGain);
+    rustleGain.connect(this.masterGain);
+    rustle.start(now + 0.04);
+
+    // 3. Magical unboxing harp & celesta fanfare (C5 -> E5 -> G5 -> B5 -> C6 -> E6 -> G6)
+    const unboxingNotes = [
+      523.25, // C5
+      659.25, // E5
+      783.99, // G5
+      987.77, // B5
+      1046.5, // C6
+      1318.51, // E6
+      1567.98, // G6
+    ];
+
+    unboxingNotes.forEach((freq, idx) => {
+      const delay = 0.08 + idx * 0.075;
+      const osc1 = this.ctx!.createOscillator();
+      const osc2 = this.ctx!.createOscillator();
+      const noteGain = this.ctx!.createGain();
+
+      osc1.type = 'triangle';
+      osc1.frequency.setValueAtTime(freq, now + delay);
+
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(freq * 2, now + delay);
+
+      noteGain.gain.setValueAtTime(0, now + delay);
+      noteGain.gain.linearRampToValueAtTime(0.32, now + delay + 0.025);
+      noteGain.gain.exponentialRampToValueAtTime(0.0006, now + delay + 1.45);
+
+      osc1.connect(noteGain);
+      osc2.connect(noteGain);
+      noteGain.connect(this.masterGain!);
+
+      osc1.start(now + delay);
+      osc2.start(now + delay);
+      osc1.stop(now + delay + 1.48);
+      osc2.stop(now + delay + 1.48);
+    });
+  }
 }
 
 export const romanticAudio = new RomanticAudioEngine();
+
+
+

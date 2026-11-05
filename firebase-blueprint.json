@@ -2,28 +2,40 @@
   "entities": {
     "WishEntry": {
       "title": "WishEntry",
-      "description": "A birthday wish or note saved by Atrayee inside her private birthday keepsake.",
+      "description": "A 3D sticky-note birthday wish posted on the Birthday Wishes Wall and persisted in Firestore for the logged-in user.",
       "type": "object",
       "properties": {
         "authorUid": {
           "type": "string",
-          "description": "UID of the authenticated user",
+          "description": "UID of the authenticated user who owns/views this sticky note",
           "minLength": 1,
           "maxLength": 128,
           "pattern": "^[a-zA-Z0-9_\\-]+$"
         },
-        "authorEmail": {
+        "senderName": {
           "type": "string",
-          "format": "email",
-          "description": "Verified email address of the authorized birthday recipient",
-          "minLength": 5,
-          "maxLength": 100
+          "description": "Display name signed on the sticky note",
+          "minLength": 1,
+          "maxLength": 60
         },
         "wishText": {
           "type": "string",
-          "description": "The birthday wish text",
+          "description": "The short birthday message written on the 3D sticky note",
           "minLength": 1,
-          "maxLength": 300
+          "maxLength": 280
+        },
+        "noteColor": {
+          "type": "string",
+          "description": "3D sticky note color theme",
+          "enum": ["sunrise-yellow", "blush-rose", "mint-sage", "lavender-sky", "peach-coral"],
+          "minLength": 3,
+          "maxLength": 30
+        },
+        "stickerEmoji": {
+          "type": "string",
+          "description": "Decorative pin/sticker icon on the sticky note",
+          "minLength": 1,
+          "maxLength": 16
         },
         "createdAt": {
           "type": "string",
@@ -31,7 +43,7 @@
           "description": "Server timestamp of creation"
         }
       },
-      "required": ["authorUid", "authorEmail", "wishText", "createdAt"]
+      "required": ["authorUid", "senderName", "wishText", "noteColor", "stickerEmoji", "createdAt"]
     },
     "ChatLogEntry": {
       "title": "ChatLogEntry",
@@ -71,16 +83,121 @@
         }
       },
       "required": ["authorUid", "authorEmail", "userMessage", "anikReply", "createdAt"]
+    },
+    "DailyAffirmationStatus": {
+      "title": "DailyAffirmationStatus",
+      "description": "A daily heartfelt affirmation from Anik to his sister persisted with a Read status in Firestore.",
+      "type": "object",
+      "properties": {
+        "authorUid": {
+          "type": "string",
+          "description": "UID of the authenticated user who read the daily affirmation",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "dateKey": {
+          "type": "string",
+          "description": "YYYY-MM-DD calendar date key for the daily affirmation",
+          "minLength": 8,
+          "maxLength": 20,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "affirmationId": {
+          "type": "string",
+          "description": "Identifier of the affirmation card",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "affirmationTitle": {
+          "type": "string",
+          "description": "Title of the heartfelt sibling affirmation",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "affirmationText": {
+          "type": "string",
+          "description": "Heartfelt message from Anik to his sister",
+          "minLength": 1,
+          "maxLength": 600
+        },
+        "status": {
+          "type": "string",
+          "description": "Persisted read status of the affirmation",
+          "enum": ["Read"],
+          "minLength": 4,
+          "maxLength": 10
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when marked as Read"
+        }
+      },
+      "required": [
+        "authorUid",
+        "dateKey",
+        "affirmationId",
+        "affirmationTitle",
+        "affirmationText",
+        "status",
+        "createdAt"
+      ]
+    },
+    "MemoryLikeCount": {
+      "title": "MemoryLikeCount",
+      "description": "Persisted likes counter for a specific memory card in the TimelineSection.",
+      "type": "object",
+      "properties": {
+        "authorUid": {
+          "type": "string",
+          "description": "UID of the authenticated user who liked the memory",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "memoryId": {
+          "type": "string",
+          "description": "Identifier of the memory card in Memory Lane",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "likes": {
+          "type": "integer",
+          "description": "Total number of heart likes given to this memory card"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when first liked"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when last incremented"
+        }
+      },
+      "required": ["authorUid", "memoryId", "likes", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
     "/wishes/{wishId}": {
       "schema": { "$ref": "#/entities/WishEntry" },
-      "description": "Private birthday wishes accessible exclusively to authorized accounts"
+      "description": "3D sticky-note birthday wishes persisted in Firestore specifically for the logged-in user"
     },
     "/chatLogs/{logId}": {
       "schema": { "$ref": "#/entities/ChatLogEntry" },
       "description": "Permanent append-only chat archive where Atrayee can create logs on send, but cannot read, update, or delete them"
+    },
+    "/dailyAffirmations/{affirmationDocId}": {
+      "schema": { "$ref": "#/entities/DailyAffirmationStatus" },
+      "description": "Daily heartfelt affirmations from Anik persisted with a Read status in Firestore"
+    },
+    "/memoryLikes/{likeDocId}": {
+      "schema": { "$ref": "#/entities/MemoryLikeCount" },
+      "description": "Persisted heart likes counter for each memory card in the TimelineSection"
     }
   }
 }

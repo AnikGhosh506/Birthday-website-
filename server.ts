@@ -222,6 +222,199 @@ ${transcript.slice(0, 4500)}`;
     }
   });
 
+  // ============================================================================
+  // API 3: GEMINI ASTROLOGY WISHES — PERSONALIZED BIRTHDAY STAR READING
+  // ============================================================================
+  app.post('/api/ai/astrology-wishes', async (req, res) => {
+    try {
+      const {
+        sisterName = 'Atrayee',
+        brotherName = 'Anik',
+        birthdayDate = '2002-05-28',
+        zodiacSign = 'Gemini',
+        traits = ['Brilliant Mind', 'Fierce Protector', 'Warm Heart', 'Data & Tech Whiz', 'Movie Buff'],
+        focusTheme = 'Year of Radiant Triumphs & Sisterhood Joy',
+      } = req.body || {};
+
+      const ai = getGenAI();
+
+      const prompt = `Create a deeply heartfelt, poetic, and personalized "Birthday Star Reading & Astrology Wishes" scroll for ${sisterName} ("Didi"), written as a celestial birthday gift from her younger brother ${brotherName}.
+
+Details about ${sisterName}:
+- Birth Date: ${birthdayDate} (Sun Sign: ${zodiacSign}, Air Element, Ruled by Mercury)
+- Key Personal Traits: ${Array.isArray(traits) ? traits.join(', ') : String(traits)}
+- Special Focus for this Birthday Reading: ${focusTheme}
+- Real-life touches to weave in warmly: She studies at NIT, excels in Data Science & Business Analytics (with her Bangalore internship ahead), loves cinema (Dune, Spider-Man, The Odyssey), and is the most caring, iconic older sister ("Didi") to ${brotherName}.
+
+Return a JSON object with:
+1. "title": A poetic celestial title for her parchment scroll.
+2. "sunSignSummary": 2-3 warm sentences explaining how her ${zodiacSign} birth star (${birthdayDate}) shapes her duality of sharp intellect and boundless warmth.
+3. "cosmicChapters": Exactly 3 chapters (each with "heading" and "body" of 3-4 rich, heartfelt sentences):
+   - Chapter I: Her Natal Star & Luminous Character (celebrating her traits: ${Array.isArray(traits) ? traits.join(', ') : ''})
+   - Chapter II: The Twin-Star Bond of Sisterhood (${sisterName} & ${brotherName}'s lifelong bond)
+   - Chapter III: Solar Return Prophecy & Birthday Wishes for the Year Ahead
+4. "celestialBlessing": A short, emotional closing birthday blessing from ${brotherName}.
+5. "luckyElements": An object with "constellation", "rulingPlanet", "powerCrystal", and "cosmicMotto".`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              sunSignSummary: { type: Type.STRING },
+              cosmicChapters: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    heading: { type: Type.STRING },
+                    body: { type: Type.STRING },
+                  },
+                  required: ['heading', 'body'],
+                },
+              },
+              celestialBlessing: { type: Type.STRING },
+              luckyElements: {
+                type: Type.OBJECT,
+                properties: {
+                  constellation: { type: Type.STRING },
+                  rulingPlanet: { type: Type.STRING },
+                  powerCrystal: { type: Type.STRING },
+                  cosmicMotto: { type: Type.STRING },
+                },
+                required: ['constellation', 'rulingPlanet', 'powerCrystal', 'cosmicMotto'],
+              },
+            },
+            required: [
+              'title',
+              'sunSignSummary',
+              'cosmicChapters',
+              'celestialBlessing',
+              'luckyElements',
+            ],
+          },
+        },
+      });
+
+      const rawText = (response.text ?? '{}').trim();
+      const parsed = JSON.parse(rawText);
+      res.json({ reading: parsed });
+    } catch (error) {
+      console.error('Error in /api/ai/astrology-wishes:', error);
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to generate astrology wishes',
+      });
+    }
+  });
+
+  // ============================================================================
+  // API 4: GEMINI SIBLING VIDEO MESSAGE SCRIPT GENERATOR
+  // ============================================================================
+  app.post('/api/ai/video-message-script', async (req, res) => {
+    try {
+      const {
+        sisterName = 'Atrayee',
+        brotherName = 'Anik',
+        tone = 'Heartfelt & Playful Little Brother Tribute',
+        customNote = '',
+      } = req.body || {};
+
+      const transcript = getDefaultWhatsAppTranscript();
+      const ai = getGenAI();
+
+      const prompt = `Create a short, deeply personal, and cinematic 4-scene birthday video message script from younger brother ${brotherName} to his older sister ${sisterName} ("Didi", born May 28th).
+
+Selected Video Vibe / Tone: ${tone}
+${customNote ? `Special Personal Note to Include: ${customNote}` : ''}
+
+Real-life sibling details from their WhatsApp chats to weave naturally into the script:
+- ${sisterName} ("Didi") studies at NIT and landed her Data Science & Business Analytics internship in Bangalore.
+- ${brotherName} is in 9th grade, loves AI & coding, stays up until 3:30 AM watching movies and eating Magnum ice cream ("Magnum khelam. Tui khabi?"), and always teases her to call him more often ("Ekta call o koris ni!").
+- They love talking about Spider-Man, Dune 3, The Odyssey, Avengers: Doomsday, and planning Kali Pujo & Durga Pujo reunions back home.
+
+WhatsApp Context Reference:
+${transcript.slice(0, 3500)}
+
+Return a JSON object with:
+1. "videoTitle": A catchy, emotional title for the birthday video message.
+2. "subtitle": A short tagline (e.g. "Directed & Recorded by ${brotherName} for ${sisterName} Didi").
+3. "estimatedDuration": e.g. "0:45"
+4. "directorNote": A 1-sentence stage direction for how ${brotherName} delivers the video.
+5. "scenes": Exactly 4 sequential video scenes, each containing:
+   - "sceneNumber": 1 to 4
+   - "timestamp": e.g. "0:00 - 0:11"
+   - "sceneTitle": Short title of the shot
+   - "visualDirection": Camera/stage cue for the 3D video frame
+   - "spokenLine": The exact first-person birthday script lines spoken by ${brotherName} to ${sisterName} (warm, natural English with a sprinkle of sweet everyday Banglish like "Didi", "tui", "khawabo chol kali pujoi")
+   - "emotionTag": e.g. "Warm Smile", "Playful Tease", "Proud Brother", "Birthday Toast"
+6. "closingToast": A short final birthday sign-off line displayed at the end of the video frame.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              videoTitle: { type: Type.STRING },
+              subtitle: { type: Type.STRING },
+              estimatedDuration: { type: Type.STRING },
+              directorNote: { type: Type.STRING },
+              scenes: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    sceneNumber: { type: Type.INTEGER },
+                    timestamp: { type: Type.STRING },
+                    sceneTitle: { type: Type.STRING },
+                    visualDirection: { type: Type.STRING },
+                    spokenLine: { type: Type.STRING },
+                    emotionTag: { type: Type.STRING },
+                  },
+                  required: [
+                    'sceneNumber',
+                    'timestamp',
+                    'sceneTitle',
+                    'visualDirection',
+                    'spokenLine',
+                    'emotionTag',
+                  ],
+                },
+              },
+              closingToast: { type: Type.STRING },
+            },
+            required: [
+              'videoTitle',
+              'subtitle',
+              'estimatedDuration',
+              'directorNote',
+              'scenes',
+              'closingToast',
+            ],
+          },
+        },
+      });
+
+      const rawText = (response.text ?? '{}').trim();
+      const parsed = JSON.parse(rawText);
+      res.json({ script: parsed });
+    } catch (error) {
+      console.error('Error in /api/ai/video-message-script:', error);
+      res.status(500).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to generate birthday video script',
+      });
+    }
+  });
+
   // Mount Vite in development or static dist in production
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

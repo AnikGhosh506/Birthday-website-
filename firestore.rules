@@ -40,20 +40,32 @@ service cloud.firestore {
     }
 
     function isValidWishEntry(data) {
-      return data.keys().hasAll(['authorUid', 'authorEmail', 'wishText', 'createdAt'])
-        && data.keys().hasOnly(['authorUid', 'authorEmail', 'wishText', 'createdAt'])
+      return data.keys().hasAll(['authorUid', 'senderName', 'wishText', 'noteColor', 'stickerEmoji', 'createdAt'])
+        && data.keys().hasOnly(['authorUid', 'senderName', 'wishText', 'noteColor', 'stickerEmoji', 'createdAt'])
         && data.authorUid is string
         && data.authorUid.size() >= 1
         && data.authorUid.size() <= 128
         && data.authorUid.matches('^[a-zA-Z0-9_\\-]+$')
         && data.authorUid == request.auth.uid
-        && data.authorEmail is string
-        && data.authorEmail.size() >= 5
-        && data.authorEmail.size() <= 100
-        && data.authorEmail == request.auth.token.email
+        && data.senderName is string
+        && data.senderName.size() >= 1
+        && data.senderName.size() <= 60
         && data.wishText is string
         && data.wishText.size() >= 1
-        && data.wishText.size() <= 300
+        && data.wishText.size() <= 280
+        && data.noteColor is string
+        && data.noteColor.size() >= 3
+        && data.noteColor.size() <= 30
+        && (
+          data.noteColor == 'sunrise-yellow'
+          || data.noteColor == 'blush-rose'
+          || data.noteColor == 'mint-sage'
+          || data.noteColor == 'lavender-sky'
+          || data.noteColor == 'peach-coral'
+        )
+        && data.stickerEmoji is string
+        && data.stickerEmoji.size() >= 1
+        && data.stickerEmoji.size() <= 16
         && data.createdAt is timestamp;
     }
 
@@ -78,6 +90,54 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
+    function isValidDailyAffirmation(data) {
+      return data.keys().hasAll(['authorUid', 'dateKey', 'affirmationId', 'affirmationTitle', 'affirmationText', 'status', 'createdAt'])
+        && data.keys().hasOnly(['authorUid', 'dateKey', 'affirmationId', 'affirmationTitle', 'affirmationText', 'status', 'createdAt'])
+        && data.authorUid is string
+        && data.authorUid.size() >= 1
+        && data.authorUid.size() <= 128
+        && data.authorUid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.authorUid == request.auth.uid
+        && data.dateKey is string
+        && data.dateKey.size() >= 8
+        && data.dateKey.size() <= 20
+        && data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.affirmationId is string
+        && data.affirmationId.size() >= 1
+        && data.affirmationId.size() <= 64
+        && data.affirmationId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.affirmationTitle is string
+        && data.affirmationTitle.size() >= 1
+        && data.affirmationTitle.size() <= 120
+        && data.affirmationText is string
+        && data.affirmationText.size() >= 1
+        && data.affirmationText.size() <= 600
+        && data.status is string
+        && data.status.size() >= 4
+        && data.status.size() <= 10
+        && data.status == 'Read'
+        && data.createdAt is timestamp;
+    }
+
+    function isValidMemoryLike(data) {
+      return data.keys().hasAll(['authorUid', 'memoryId', 'likes', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['authorUid', 'memoryId', 'likes', 'createdAt', 'updatedAt'])
+        && data.authorUid is string
+        && data.authorUid.size() >= 1
+        && data.authorUid.size() <= 128
+        && data.authorUid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.authorUid == request.auth.uid
+        && data.memoryId is string
+        && data.memoryId.size() >= 1
+        && data.memoryId.size() <= 64
+        && data.memoryId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.likes is int
+        && data.likes >= 1
+        && data.likes <= 100000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
     match /wishes/{wishId} {
       allow get: if isAuthorizedSister() && isValidId(wishId) && existing().authorUid == request.auth.uid;
       allow list: if isAuthorizedSister() && existing().authorUid == request.auth.uid;
@@ -99,6 +159,41 @@ service cloud.firestore {
         && incoming().createdAt == request.time;
       allow update: if false;
       allow delete: if false;
+    }
+
+    // Daily Affirmations Read Status persisted in Firestore for the logged-in user
+    match /dailyAffirmations/{affirmationDocId} {
+      allow get: if isAuthorizedSister() && isValidId(affirmationDocId) && existing().authorUid == request.auth.uid;
+      allow list: if isAuthorizedSister() && existing().authorUid == request.auth.uid;
+      allow create: if isAuthorizedSister()
+        && isValidId(affirmationDocId)
+        && isValidDailyAffirmation(incoming())
+        && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isAuthorizedSister() && isValidId(affirmationDocId) && existing().authorUid == request.auth.uid;
+    }
+
+    // Memory Card Likes Counter persisted in Firestore for the logged-in user
+    match /memoryLikes/{likeDocId} {
+      allow get: if isAuthorizedSister() && isValidId(likeDocId) && existing().authorUid == request.auth.uid;
+      allow list: if isAuthorizedSister() && existing().authorUid == request.auth.uid;
+      allow create: if isAuthorizedSister()
+        && isValidId(likeDocId)
+        && isValidMemoryLike(incoming())
+        && incoming().likes == 1
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isAuthorizedSister()
+        && isValidId(likeDocId)
+        && isValidMemoryLike(incoming())
+        && existing().authorUid == request.auth.uid
+        && incoming().authorUid == existing().authorUid
+        && incoming().memoryId == existing().memoryId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().likes == existing().likes + 1
+        && incoming().diff(existing()).affectedKeys().hasOnly(['likes', 'updatedAt']);
+      allow delete: if isAuthorizedSister() && isValidId(likeDocId) && existing().authorUid == request.auth.uid;
     }
   }
 }

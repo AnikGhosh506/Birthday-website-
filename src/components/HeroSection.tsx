@@ -1,6 +1,7 @@
 import React from 'react';
 import { BirthdayCake } from './BirthdayCake';
-import { Heart, Gamepad2, Volume2, VolumeX } from 'lucide-react';
+import { Heart, Gamepad2, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { triggerGlobalFireworksShow } from './FireworksShowCanvas';
 
 interface HeroSectionProps {
   girlfriendName: string;
@@ -110,11 +111,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       const y = anchorRect.top + gap - padY;
       el.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
       el.style.padding = `${padY.toFixed(2)}px ${padX.toFixed(2)}px`;
-      el.style.backgroundColor = `rgba(250, 247, 245, ${(pillAlpha * 0.95).toFixed(3)})`;
-      el.style.borderColor = `rgba(214, 211, 209, ${(pillAlpha * 0.9).toFixed(3)})`;
+      el.style.backgroundColor = `rgba(var(--theme-pill-rgb), ${(pillAlpha * 0.95).toFixed(3)})`;
+      el.style.borderColor = `rgba(var(--theme-pill-border-rgb), ${(pillAlpha * 0.9).toFixed(3)})`;
       el.style.boxShadow =
         pillAlpha > 0.02
-          ? `0 ${(6 * pillAlpha).toFixed(1)}px ${(18 * pillAlpha).toFixed(1)}px -4px rgba(43, 37, 35, ${(0.12 * pillAlpha).toFixed(3)})`
+          ? `0 ${(6 * pillAlpha).toFixed(1)}px ${(18 * pillAlpha).toFixed(1)}px -4px rgba(0, 0, 0, ${(0.18 * pillAlpha).toFixed(3)})`
           : 'none';
       el.style.backdropFilter =
         pillAlpha > 0.04 ? `blur(${(pillAlpha * 8).toFixed(1)}px)` : 'none';
@@ -270,7 +271,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   >
                     <span
                       style={{
-                        color: layer > 5 ? '#78685a' : '#b8a696',
+                        color: layer > 5 ? 'var(--theme-h-shadow-5)' : 'var(--theme-h-shadow-3)',
                       }}
                     >
                       Happy Birthday,
@@ -278,7 +279,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <span
                       className="italic font-bold"
                       style={{
-                        color: layer > 5 ? '#4c0519' : '#9f1239',
+                        color: layer > 5 ? 'var(--theme-atrayee-s6)' : 'var(--theme-atrayee-s3)',
                       }}
                     >
                       {girlfriendName || 'Atrayee'}
@@ -308,6 +309,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
             {/* 3D Extruded Action buttons */}
             <div className="mt-8 flex flex-wrap items-center gap-3.5">
+              <button
+                type="button"
+                onClick={() => triggerGlobalFireworksShow()}
+                className="px-6 py-3 text-sm font-semibold text-white bg-rose-700 rounded-lg hover:bg-rose-600 transition-colors inline-flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer btn-3d-rose"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>Celebrate</span>
+              </button>
+
               <a
                 href="#arcade"
                 className="px-6 py-3 text-sm font-medium text-white bg-stone-900 rounded-lg hover:bg-stone-800 transition-colors inline-flex items-center gap-2 whitespace-nowrap shrink-0 btn-3d-dark"

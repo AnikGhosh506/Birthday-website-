@@ -410,286 +410,404 @@ export const AnikAIChatSection: React.FC<AnikAIChatSectionProps> = ({
   return (
     <section
       id="anik-ai-chat"
-      className="py-20 border-b border-stone-200/80 bg-[#f6f2ee]"
+      className="py-16 border-b border-stone-200/80 bg-[#f6f2ee]"
     >
-      <div className="max-w-4xl mx-auto px-6">
-        {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-800 uppercase tracking-widest mb-2">
-            <span>Chapter 07</span>
-            <span aria-hidden="true">·</span>
-            <span>Direct Sibling Chat</span>
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Section Header — Full-Width Balanced Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+          <div>
+            <div className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-800 uppercase tracking-widest mb-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600" />
+              </span>
+              <span>Chapter 07</span>
+              <span aria-hidden="true">·</span>
+              <span>Direct Sibling Chat & Profile Lounge</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900 heading-3d">
+              Chat with {chatPartnerName}
+            </h2>
+            <p className="mt-1.5 text-sm sm:text-base text-stone-600 font-sans max-w-2xl">
+              {isAnikLoggedIn
+                ? `Chat directly with ${girlfriendName} Didi about NIT, Bangalore, movies, exhibition ideas, or anything on your mind!`
+                : `Ask ${boyfriendName} anything — tech, Data Science, movies, career tips, or casual sibling chat!`}
+            </p>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900 heading-3d">
-            Chat with {chatPartnerName}
-          </h2>
-          <p className="mt-2 text-sm sm:text-base text-stone-600 font-sans">
-            {isAnikLoggedIn
-              ? `Chat directly with ${girlfriendName} Didi about NIT, Bangalore, movies, exhibition ideas, or anything on your mind!`
-              : `Ask ${boyfriendName} anything — tech, Data Science, movies, career tips, or casual sibling chat!`}
-          </p>
+
+          {/* Live Connection Badge */}
+          <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white border border-stone-200/90 shadow-xs shrink-0 self-start md:self-auto">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-semibold text-stone-700">
+              Logged in as <strong className="text-stone-900">{currentUserDisplayName}</strong>
+            </span>
+          </div>
         </div>
 
-        {/* 3D Keepsake Chat Window */}
-        <div className="bg-white border border-stone-200/90 rounded-2xl shadow-xl overflow-hidden card-3d-tilt">
-          {/* Top Chat Header Bar */}
-          <div className="bg-stone-900 text-white px-5 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-stone-800">
-            {/* Left: Chat Partner's Profile Picture + Name */}
-            <div className="flex items-center gap-3.5">
-              <div className="relative shrink-0">
-                {partnerAvatar ? (
-                  <img
-                    src={partnerAvatar}
-                    alt={chatPartnerShortName}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-emerald-400 shadow-md"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white font-serif font-bold text-lg border-2 border-emerald-400 shadow-md">
-                    {chatPartnerShortName.charAt(0)}
+        {/* Balanced 12-Column Desktop Layout: Left Chat Window (7 cols) + Right Sibling Profile & Controls (5 cols) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          {/* LEFT COLUMN (7 Cols): 3D Keepsake Chat Window */}
+          <div className="lg:col-span-7 bg-white border border-stone-200/90 rounded-2xl shadow-xl overflow-hidden flex flex-col justify-between card-3d-tilt">
+            {/* Top Chat Header Bar */}
+            <div className="bg-stone-900 text-white px-5 py-4 flex flex-wrap items-center justify-between gap-3 border-b border-stone-800">
+              <div className="flex items-center gap-3.5">
+                <div className="relative shrink-0">
+                  {partnerAvatar ? (
+                    <img
+                      src={partnerAvatar}
+                      alt={chatPartnerShortName}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-emerald-400 shadow-md"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white font-serif font-bold text-lg border-2 border-emerald-400 shadow-md">
+                      {chatPartnerShortName.charAt(0)}
+                    </div>
+                  )}
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-stone-900 animate-pulse" />
+                </div>
+
+                <div>
+                  <h3 className="font-serif font-bold text-base sm:text-lg text-white leading-tight">
+                    {chatPartnerName}
+                  </h3>
+                  <p className="text-xs text-emerald-400 font-medium mt-0.5 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    {isAnikLoggedIn
+                      ? `Online · Always here for ${boyfriendName} ❤️`
+                      : `Online · Always here for ${girlfriendName} Didi ❤️`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-full bg-stone-800 border border-stone-700 text-[11px] font-mono text-emerald-300">
+                  {messages.length} {messages.length === 1 ? 'msg' : 'msgs'}
+                </span>
+              </div>
+            </div>
+
+            {/* Starter Prompt Suggestions */}
+            <div className="px-4 py-2.5 bg-stone-100/80 border-b border-stone-200/80 flex items-center gap-2 overflow-x-auto no-scrollbar">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 shrink-0 flex items-center gap-1">
+                <MessageCircleHeart className="w-3.5 h-3.5 text-rose-600 animate-pulse" />
+                Quick ask:
+              </span>
+              {activeStarterPrompts.map((prompt, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => void handleSendMessage(prompt)}
+                  disabled={isLoading}
+                  className="px-3 py-1 rounded-lg bg-white hover:bg-rose-50 border border-stone-200/90 hover:border-rose-300 text-xs text-stone-700 hover:text-rose-900 transition-colors whitespace-nowrap shrink-0 cursor-pointer shadow-2xs"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+
+            {/* Messages Scroll Area */}
+            <div
+              ref={chatContainerRef}
+              className="h-[430px] overflow-y-auto p-5 space-y-4 bg-[#efeae2]/60 flex-1"
+            >
+              {messages.map((msg) => {
+                const isUser = msg.role === 'user';
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex items-end gap-2.5 ${
+                      isUser ? 'justify-end' : 'justify-start'
+                    }`}
+                  >
+                    {!isUser && (
+                      <div className="shrink-0">
+                        {partnerAvatar ? (
+                          <img
+                            src={partnerAvatar}
+                            alt={chatPartnerShortName}
+                            className="w-8 h-8 rounded-full object-cover border border-emerald-500/60 shadow-2xs"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-emerald-700 text-white font-serif font-bold text-xs flex items-center justify-center shadow-2xs">
+                            {chatPartnerShortName.charAt(0)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div
+                      className={`max-w-[82%] sm:max-w-[75%] rounded-2xl px-4 py-3 shadow-xs ${
+                        isUser
+                          ? 'bg-rose-800 text-white rounded-br-xs'
+                          : 'bg-white border border-stone-200/90 text-stone-900 rounded-bl-xs'
+                      }`}
+                    >
+                      <div className="text-[11px] font-semibold mb-1 flex items-center justify-between gap-4 opacity-75">
+                        <span>
+                          {isUser ? currentUserDisplayName : chatPartnerShortName}
+                        </span>
+                        <span className="font-mono text-[10px]">
+                          {msg.timestamp}
+                        </span>
+                      </div>
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap font-sans">
+                        {msg.text}
+                      </div>
+                    </div>
+
+                    {isUser && (
+                      <div className="shrink-0">
+                        {myOwnAvatar ? (
+                          <img
+                            src={myOwnAvatar}
+                            alt={myOwnName}
+                            className="w-8 h-8 rounded-full object-cover border border-rose-400 shadow-2xs"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-rose-700 text-white font-serif font-bold text-xs flex items-center justify-center shadow-2xs">
+                            {myOwnName.charAt(0)}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })}
 
-              <div>
-                <h3 className="font-serif font-bold text-base sm:text-lg text-white leading-tight">
-                  {chatPartnerName}
-                </h3>
-                <p className="text-xs text-emerald-400 font-medium mt-0.5">
-                  {isAnikLoggedIn
-                    ? `Online · Always here for ${boyfriendName} ❤️`
-                    : `Online · Always here for ${girlfriendName} Didi ❤️`}
-                </p>
-              </div>
-            </div>
-
-            {/* Right: Export Chat & Clear Chat History with Delete Logo */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleExportChat}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-stone-800 hover:bg-stone-700 border border-stone-700 text-xs font-medium text-stone-100 transition-colors cursor-pointer"
-                title="Export Chat History (.txt)"
-              >
-                <Download className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Export Chat</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleClearChat}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-rose-950/80 hover:bg-rose-900 border border-rose-800/60 text-xs font-medium text-rose-200 transition-colors cursor-pointer"
-                title="Clear Chat History"
-              >
-                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                <span>Clear Chat</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Role-Locked Profile Picture Bar: Each account can ONLY upload/remove their OWN profile photo */}
-          <div className="px-5 py-3 bg-stone-950 text-stone-200 border-b border-stone-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-            {/* Left: Partner's Photo (View-Only, locked for the other person) */}
-            <div className="flex items-center gap-2.5">
-              {partnerAvatar ? (
-                <img
-                  src={partnerAvatar}
-                  alt={chatPartnerShortName}
-                  className="w-7 h-7 rounded-full object-cover border border-emerald-400"
-                />
-              ) : (
-                <div className="w-7 h-7 rounded-full bg-emerald-700 text-white text-xs font-bold flex items-center justify-center">
-                  {chatPartnerShortName.charAt(0)}
+              {isLoading && (
+                <div className="flex items-center gap-2.5">
+                  {partnerAvatar ? (
+                    <img
+                      src={partnerAvatar}
+                      alt={chatPartnerShortName}
+                      className="w-8 h-8 rounded-full object-cover border border-emerald-500/60"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-emerald-700 text-white font-serif font-bold text-xs flex items-center justify-center">
+                      {chatPartnerShortName.charAt(0)}
+                    </div>
+                  )}
+                  <div className="bg-white border border-stone-200 rounded-2xl rounded-bl-xs px-4 py-2.5 shadow-xs text-xs text-stone-600 animate-pulse">
+                    <span>{chatPartnerShortName} is typing...</span>
+                  </div>
                 </div>
               )}
-              <span className="text-stone-400">
-                Chatting with <strong className="text-stone-200">{chatPartnerShortName}</strong>
-              </span>
             </div>
 
-            {/* Right: Logged-in User's Own Profile Photo Controls (Anik can only edit Anik's photo; Didi can only edit Didi's photo) */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2">
-                {myOwnAvatar ? (
-                  <img
-                    src={myOwnAvatar}
-                    alt={myOwnName}
-                    className="w-7 h-7 rounded-full object-cover border border-rose-400"
-                  />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-rose-700 text-white text-xs font-bold flex items-center justify-center">
-                    {myOwnName.charAt(0)}
+            {/* Input Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleSendMessage();
+              }}
+              className="p-4 bg-stone-50 border-t border-stone-200 flex items-center gap-2.5"
+            >
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={`Write a message to ${chatPartnerShortName}...`}
+                className="flex-1 px-4 py-3 rounded-xl bg-white border border-stone-300 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-rose-500"
+              />
+              <button
+                type="submit"
+                disabled={!input.trim() || isLoading}
+                className="px-5 py-3 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:opacity-40 text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition-all cursor-pointer btn-3d-dark shrink-0"
+              >
+                <span>Send</span>
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+
+          {/* RIGHT COLUMN (5 Cols): Sibling Profile Information, Photo Studio & Chat Controls */}
+          <div className="lg:col-span-5 flex flex-col justify-between gap-5">
+            {/* Card 1: Sibling Partner Profile Dossier */}
+            <div className="bg-white border border-stone-200/90 rounded-2xl p-6 shadow-md card-3d-tilt">
+              <div className="flex items-start gap-4">
+                <div className="relative shrink-0">
+                  {partnerAvatar ? (
+                    <img
+                      src={partnerAvatar}
+                      alt={chatPartnerShortName}
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 flex items-center justify-center text-white font-serif font-bold text-2xl border-2 border-emerald-400 shadow-sm">
+                      {chatPartnerShortName.charAt(0)}
+                    </div>
+                  )}
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white" />
+                  </span>
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+                    Active Sibling Persona
                   </div>
-                )}
-                <span className="text-stone-300 font-medium">
-                  Your Profile Photo ({myOwnName}):
+                  <h3 className="text-xl font-serif font-bold text-stone-900 mt-1 truncate">
+                    {chatPartnerName}
+                  </h3>
+                  <p className="text-xs text-stone-500 mt-0.5">
+                    {isAnikLoggedIn
+                      ? 'NIT Durgapur · Bangalore Internship · Beloved Older Sister'
+                      : 'Class 9 · AI, Coding & Data Science Enthusiast · Little Brother'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Sibling Profile Highlights & Interactive Conversation Starters */}
+              <div className="mt-4 pt-4 border-t border-stone-200/80">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2.5">
+                  Tap a Sibling Topic to Ask {chatPartnerShortName}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {activeStarterPrompts.slice(0, 4).map((topicPrompt, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => void handleSendMessage(topicPrompt)}
+                      disabled={isLoading}
+                      className="text-left p-2.5 rounded-xl bg-stone-50 hover:bg-rose-50/80 border border-stone-200/90 hover:border-rose-300 transition-all cursor-pointer group"
+                    >
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700 group-hover:text-rose-800">
+                        Topic 0{i + 1}
+                      </div>
+                      <div className="text-xs text-stone-700 font-medium line-clamp-2 mt-0.5">
+                        {topicPrompt}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Role-Locked Sibling Profile Photo Studio */}
+            <div className="bg-stone-900 text-stone-100 border border-stone-800 rounded-2xl p-5 shadow-md card-3d-tilt">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
+                  Sibling Avatar Studio
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-stone-800 text-[10px] font-mono text-emerald-300 border border-stone-700">
+                  Role-Locked
                 </span>
               </div>
 
-              <button
-                type="button"
-                onClick={() => myProfileFileRef.current?.click()}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-stone-800 hover:bg-stone-700 text-emerald-300 border border-stone-700 transition-colors cursor-pointer"
-              >
-                <Camera className="w-3 h-3" />
-                <span>Upload My Photo</span>
-              </button>
-
-              {myOwnAvatar && (
-                <button
-                  type="button"
-                  onClick={handleRemoveMyOwnAvatar}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-stone-900 hover:bg-rose-950 text-rose-300 border border-stone-800 transition-colors cursor-pointer"
-                  title={`Remove ${myOwnName}'s Profile Picture`}
-                >
-                  <X className="w-3 h-3" />
-                  <span>Remove</span>
-                </button>
-              )}
-
-              <input
-                ref={myProfileFileRef}
-                type="file"
-                accept="image/*"
-                onChange={handleUploadMyOwnAvatar}
-                className="hidden"
-              />
-            </div>
-          </div>
-
-          {/* Starter Prompt Suggestions */}
-          <div className="px-5 py-3 bg-stone-100/80 border-b border-stone-200/80 flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 shrink-0 flex items-center gap-1">
-              <MessageCircleHeart className="w-3.5 h-3.5 text-rose-600" />
-              Quick chat:
-            </span>
-            {activeStarterPrompts.map((prompt, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => void handleSendMessage(prompt)}
-                disabled={isLoading}
-                className="px-3 py-1 rounded-lg bg-white hover:bg-rose-50 border border-stone-200/90 hover:border-rose-300 text-xs text-stone-700 hover:text-rose-900 transition-colors whitespace-nowrap shrink-0 cursor-pointer shadow-2xs"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-
-          {/* Messages Scroll Area */}
-          <div
-            ref={chatContainerRef}
-            className="h-[400px] overflow-y-auto p-5 space-y-4 bg-[#efeae2]/60"
-          >
-            {messages.map((msg) => {
-              const isUser = msg.role === 'user';
-              return (
-                <div
-                  key={msg.id}
-                  className={`flex items-end gap-2.5 ${
-                    isUser ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  {/* Partner's Avatar beside incoming messages */}
-                  {!isUser && (
-                    <div className="shrink-0">
-                      {partnerAvatar ? (
-                        <img
-                          src={partnerAvatar}
-                          alt={chatPartnerShortName}
-                          className="w-8 h-8 rounded-full object-cover border border-emerald-500/60 shadow-2xs"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-emerald-700 text-white font-serif font-bold text-xs flex items-center justify-center shadow-2xs">
-                          {chatPartnerShortName.charAt(0)}
-                        </div>
-                      )}
+              {/* Dual Avatar Comparison Row */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="p-3 rounded-xl bg-stone-950/90 border border-stone-800 flex items-center gap-2.5">
+                  {myOwnAvatar ? (
+                    <img
+                      src={myOwnAvatar}
+                      alt={myOwnName}
+                      className="w-10 h-10 rounded-full object-cover border-2 border-rose-400 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-rose-700 text-white text-sm font-bold flex items-center justify-center shrink-0">
+                      {myOwnName.charAt(0)}
                     </div>
                   )}
-
-                  <div
-                    className={`max-w-[80%] sm:max-w-[72%] rounded-2xl px-4 py-3 shadow-xs ${
-                      isUser
-                        ? 'bg-rose-800 text-white rounded-br-xs'
-                        : 'bg-white border border-stone-200/90 text-stone-900 rounded-bl-xs'
-                    }`}
-                  >
-                    <div className="text-[11px] font-semibold mb-1 flex items-center justify-between gap-4 opacity-75">
-                      <span>
-                        {isUser ? currentUserDisplayName : chatPartnerShortName}
-                      </span>
-                      <span className="font-mono text-[10px]">
-                        {msg.timestamp}
-                      </span>
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase tracking-wider text-rose-300 font-semibold">
+                      You (Editable)
                     </div>
-                    <div className="text-sm leading-relaxed whitespace-pre-wrap font-sans">
-                      {msg.text}
+                    <div className="text-xs font-bold text-white truncate">
+                      {myOwnName}
                     </div>
                   </div>
-
-                  {/* Logged-in User's Avatar beside outgoing messages */}
-                  {isUser && (
-                    <div className="shrink-0">
-                      {myOwnAvatar ? (
-                        <img
-                          src={myOwnAvatar}
-                          alt={myOwnName}
-                          className="w-8 h-8 rounded-full object-cover border border-rose-400 shadow-2xs"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-rose-700 text-white font-serif font-bold text-xs flex items-center justify-center shadow-2xs">
-                          {myOwnName.charAt(0)}
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
-              );
-            })}
 
-            {isLoading && (
-              <div className="flex items-center gap-2.5">
-                {partnerAvatar ? (
-                  <img
-                    src={partnerAvatar}
-                    alt={chatPartnerShortName}
-                    className="w-8 h-8 rounded-full object-cover border border-emerald-500/60"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-emerald-700 text-white font-serif font-bold text-xs flex items-center justify-center">
-                    {chatPartnerShortName.charAt(0)}
+                <div className="p-3 rounded-xl bg-stone-950/90 border border-stone-800 flex items-center gap-2.5">
+                  {partnerAvatar ? (
+                    <img
+                      src={partnerAvatar}
+                      alt={chatPartnerShortName}
+                      className="w-10 h-10 rounded-full object-cover border-2 border-emerald-400 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-emerald-700 text-white text-sm font-bold flex items-center justify-center shrink-0">
+                      {chatPartnerShortName.charAt(0)}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase tracking-wider text-emerald-300 font-semibold">
+                      Sibling
+                    </div>
+                    <div className="text-xs font-bold text-white truncate">
+                      {chatPartnerShortName}
+                    </div>
                   </div>
-                )}
-                <div className="bg-white border border-stone-200 rounded-2xl rounded-bl-xs px-4 py-2.5 shadow-xs text-xs text-stone-600">
-                  <span>{chatPartnerShortName} is typing...</span>
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Input Form */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void handleSendMessage();
-            }}
-            className="p-4 bg-stone-50 border-t border-stone-200 flex items-center gap-2.5"
-          >
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={`Write a message to ${chatPartnerShortName}...`}
-              className="flex-1 px-4 py-3 rounded-xl bg-white border border-stone-300 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-rose-500"
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className="px-5 py-3 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:opacity-40 text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition-all cursor-pointer btn-3d-dark shrink-0"
-            >
-              <span>Send</span>
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => myProfileFileRef.current?.click()}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>Upload My Photo ({myOwnName})</span>
+                </button>
+
+                {myOwnAvatar && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveMyOwnAvatar}
+                    className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-stone-800 hover:bg-rose-950 text-rose-300 border border-stone-700 text-xs font-semibold transition-colors cursor-pointer"
+                    title={`Remove ${myOwnName}'s Profile Picture`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Remove</span>
+                  </button>
+                )}
+
+                <input
+                  ref={myProfileFileRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleUploadMyOwnAvatar}
+                  className="hidden"
+                />
+              </div>
+            </div>
+
+            {/* Card 3: Chat Session Actions (Export & Clear) */}
+            <div className="bg-white border border-stone-200/90 rounded-2xl p-5 shadow-xs card-3d-tilt">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
+                  Keepsake Transcript & History
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Cloud Synced
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleExportChat}
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-xs font-semibold text-white transition-colors cursor-pointer btn-3d-dark"
+                  title="Export Chat History (.txt)"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Export Chat (.txt)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleClearChat}
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-xs font-semibold text-rose-800 transition-colors cursor-pointer"
+                  title="Clear Chat History"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Clear Local Chat</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

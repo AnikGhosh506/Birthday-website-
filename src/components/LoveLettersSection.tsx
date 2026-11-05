@@ -11,8 +11,10 @@ import {
   Eraser,
   Sparkles,
   FileText,
+  RotateCcw,
 } from 'lucide-react';
 import { romanticAudio } from '../utils/audioSynth';
+import { triggerConfettiExplosion } from '../utils/confettiExplosion';
 
 interface LoveLettersSectionProps {
   letters: LoveLetter[];
@@ -98,6 +100,8 @@ export const LoveLettersSection: React.FC<LoveLettersSectionProps> = ({
   boyfriendName,
 }) => {
   const [openedLetterId, setOpenedLetterId] = useState<string | null>(null);
+  const [breakingLetterId, setBreakingLetterId] = useState<string | null>(null);
+  const [unfoldAnimKey, setUnfoldAnimKey] = useState<number>(0);
   const [readLetterIds, setReadLetterIds] = useState<Set<string>>(new Set());
   const [showStudioPanel, setShowStudioPanel] = useState(false);
 
@@ -320,9 +324,31 @@ export const LoveLettersSection: React.FC<LoveLettersSectionProps> = ({
   };
 
   const handleOpenLetter = (letter: LoveLetter) => {
-    romanticAudio.playCelebrationChime();
-    setOpenedLetterId(letter.id);
-    setReadLetterIds((prev) => new Set([...prev, letter.id]));
+    if (breakingLetterId) return;
+    // Stage 1: Crack the 3D Wax Seal & open the 3D envelope flap
+    romanticAudio.playSoftClick();
+    setBreakingLetterId(letter.id);
+
+    // Stage 2: After wax seal breaks & letter rises from envelope, unfold the 3D parchment modal
+    window.setTimeout(() => {
+      romanticAudio.playCelebrationChime();
+      setBreakingLetterId(null);
+      setOpenedLetterId(letter.id);
+      setUnfoldAnimKey((prev) => prev + 1);
+      setReadLetterIds((prev) => new Set([...prev, letter.id]));
+    }, 560);
+  };
+
+  const handleReplayWaxBreakAndUnfold = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    letter: LoveLetter
+  ) => {
+    e.stopPropagation();
+    triggerConfettiExplosion({ clientX: e.clientX, clientY: e.clientY });
+    setOpenedLetterId(null);
+    window.setTimeout(() => {
+      handleOpenLetter(letter);
+    }, 60);
   };
 
   const currentLetter = letters.find((l) => l.id === openedLetterId);
@@ -494,26 +520,104 @@ export const LoveLettersSection: React.FC<LoveLettersSectionProps> = ({
           {letters.map((letter) => {
             const isRead = readLetterIds.has(letter.id);
             const hasScan = Boolean(handwrittenScans[letter.id]);
+            const isBreaking = breakingLetterId === letter.id;
+            const sealHex = letter.sealColor || '#b91c1c';
+
             return (
               <div
                 key={letter.id}
                 onClick={() => handleOpenLetter(letter)}
-                className="group relative bg-[#fcfaf7] border border-stone-200/90 rounded-2xl p-6 shadow-xs card-3d-tilt cursor-pointer flex flex-col justify-between overflow-hidden"
+                className={`group relative bg-[#fcfaf7] border rounded-2xl p-6 shadow-xs card-3d-tilt cursor-pointer flex flex-col justify-between overflow-visible ${
+                  isBreaking
+                    ? 'border-rose-400 ring-2 ring-rose-300/60 z-20'
+                    : 'border-stone-200/90'
+                }`}
               >
-                {/* Envelope Flap visual decoration */}
-                <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-stone-200 via-rose-200 to-stone-200 opacity-60" />
+                {/* 3D Triangular Envelope Top Flap that unfolds on click */}
+                <div
+                  aria-hidden="true"
+                  style={{
+                    clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
+                  }}
+                  className={`absolute top-0 inset-x-0 h-14 bg-gradient-to-b from-[#f3ebe1] to-[#e7dacb] border-b border-stone-300/60 rounded-t-2xl pointer-events-none z-10 transition-transform duration-500 origin-top ${
+                    isBreaking
+                      ? 'animate-flap-open-3d'
+                      : 'group-hover:[transform:perspective(900px)_rotateX(22deg)]'
+                  }`}
+                />
 
-                {/* 3D Embossed Wax Seal Stamp */}
-                <div className="flex items-center justify-between mb-4">
+                {/* Rising Parchment Sheet Preview when Wax Seal breaks */}
+                {isBreaking && (
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-transform group-hover:scale-110"
-                    style={{
-                      backgroundColor: letter.sealColor || '#b91c1c',
-                      boxShadow:
-                        '0 4px 0 0 rgba(69, 10, 10, 0.75), inset 0 2px 3px rgba(255,255,255,0.35)',
-                    }}
+                    aria-hidden="true"
+                    className="absolute inset-x-5 top-3 h-24 rounded-xl bg-[#fffdf8] border border-amber-200 shadow-xl p-3 pointer-events-none z-20 animate-letter-rise-3d flex flex-col justify-between"
                   >
-                    <Heart className="w-4 h-4 fill-white" />
+                    <div className="text-[10px] font-semibold uppercase tracking-widest text-rose-800">
+                      Unfolding Letter...
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: activePresetObj.fontFamily,
+                        color: inkColor,
+                      }}
+                      className="text-lg truncate"
+                    >
+                      {letter.title}
+                    </div>
+                    <div className="h-1 w-full bg-rose-200/60 rounded-full" />
+                  </div>
+                )}
+
+                {/* 3D Embossed Wax Seal Stamp (Cracks & Splits into 2 3D Halves on Click) */}
+                <div className="relative z-20 flex items-center justify-between mb-4 pt-2">
+                  <div className="relative w-12 h-12 flex items-center justify-center">
+                    {isBreaking ? (
+                      <>
+                        {/* Left Cracked Wax Seal Half */}
+                        <div
+                          style={{
+                            backgroundColor: sealHex,
+                            clipPath:
+                              'polygon(0% 0%, 54% 0%, 44% 28%, 58% 54%, 43% 78%, 55% 100%, 0% 100%)',
+                            boxShadow:
+                              '0 4px 0 0 rgba(69, 10, 10, 0.75), inset 0 2px 3px rgba(255,255,255,0.35)',
+                          }}
+                          className="absolute inset-0 rounded-full flex items-center justify-center text-white animate-wax-break-left"
+                        >
+                          <Heart className="w-4 h-4 fill-white" />
+                        </div>
+
+                        {/* Right Cracked Wax Seal Half */}
+                        <div
+                          style={{
+                            backgroundColor: sealHex,
+                            clipPath:
+                              'polygon(54% 0%, 100% 0%, 100% 100%, 55% 100%, 43% 78%, 58% 54%, 44% 28%)',
+                            boxShadow:
+                              '0 4px 0 0 rgba(69, 10, 10, 0.75), inset 0 2px 3px rgba(255,255,255,0.35)',
+                          }}
+                          className="absolute inset-0 rounded-full flex items-center justify-center text-white animate-wax-break-right"
+                        >
+                          <Heart className="w-4 h-4 fill-white" />
+                        </div>
+
+                        {/* Golden Spark Burst on Crack */}
+                        <span className="w-3 h-3 rounded-full bg-amber-300 animate-ping" />
+                      </>
+                    ) : (
+                      <div
+                        className="w-11 h-11 rounded-full flex items-center justify-center text-white transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[-6deg] relative"
+                        style={{
+                          backgroundColor: sealHex,
+                          boxShadow:
+                            '0 4px 0 0 rgba(69, 10, 10, 0.75), inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.35)',
+                        }}
+                      >
+                        <div className="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center">
+                          <Heart className="w-4 h-4 fill-white" />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -522,21 +626,25 @@ export const LoveLettersSection: React.FC<LoveLettersSectionProps> = ({
                         Handwritten Scan
                       </span>
                     )}
-                    {isRead ? (
+                    {isBreaking ? (
+                      <span className="text-xs font-semibold text-rose-700 animate-pulse">
+                        Breaking Seal...
+                      </span>
+                    ) : isRead ? (
                       <span className="flex items-center gap-1 text-xs text-rose-700 font-medium">
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        Opened
+                        Seal Broken · Read
                       </span>
                     ) : (
                       <span className="text-[11px] uppercase tracking-wider text-stone-400 font-medium">
-                        Sealed
+                        Wax Sealed
                       </span>
                     )}
                   </div>
                 </div>
 
                 {/* Title & Open Condition */}
-                <div>
+                <div className="relative z-10">
                   <span className="text-xs text-rose-800 font-semibold uppercase tracking-wider">
                     {letter.subtitle}
                   </span>
@@ -557,13 +665,15 @@ export const LoveLettersSection: React.FC<LoveLettersSectionProps> = ({
                 </div>
 
                 {/* Open Affordance */}
-                <div className="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between text-xs font-medium text-stone-700 group-hover:text-stone-950">
+                <div className="relative z-10 mt-6 pt-4 border-t border-stone-100 flex items-center justify-between text-xs font-medium text-stone-700 group-hover:text-stone-950">
                   <span className="inline-flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-stone-400" />
-                    Break Wax Seal
+                    <Mail className="w-3.5 h-3.5 text-rose-600" />
+                    <span>
+                      {isRead ? 'Unfold Letter Again' : 'Click to Break Wax Seal'}
+                    </span>
                   </span>
                   <span className="text-rose-700 transition-transform group-hover:translate-x-1">
-                    Read handwritten note →
+                    Unfold 3D Note →
                   </span>
                 </div>
               </div>
@@ -571,10 +681,23 @@ export const LoveLettersSection: React.FC<LoveLettersSectionProps> = ({
           })}
         </div>
 
-        {/* Unfolded Handwritten Letter Modal */}
+        {/* Unfolded Handwritten Letter Modal with 3D Depth Unfold Effect */}
         {currentLetter && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/75 animate-in fade-in duration-200">
-            <div className="relative w-full max-w-2xl bg-[#faf6f0] rounded-2xl border border-stone-300 shadow-2xl p-6 sm:p-10 paper-texture max-h-[92vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/75 backdrop-blur-xs perspective-1200 animate-in fade-in duration-200">
+            <div
+              key={unfoldAnimKey}
+              className="letter-unfold-modal-card relative w-full max-w-2xl bg-[#faf6f0] rounded-2xl border border-stone-300 shadow-2xl p-6 sm:p-10 paper-texture max-h-[92vh] overflow-y-auto"
+            >
+              {/* Subtle Horizontal Paper Fold Crease Lines for 3D Unfolded Depth */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 top-1/3 h-px bg-gradient-to-r from-transparent via-stone-400/35 to-transparent shadow-[0_1px_2px_rgba(255,255,255,0.8)]"
+              />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 top-2/3 h-px bg-gradient-to-r from-transparent via-stone-400/35 to-transparent shadow-[0_1px_2px_rgba(255,255,255,0.8)]"
+              />
+
               {/* Close Button */}
               <button
                 onClick={() => {
@@ -587,18 +710,31 @@ export const LoveLettersSection: React.FC<LoveLettersSectionProps> = ({
                 <X className="w-4 h-4" />
               </button>
 
-              {/* Wax Seal Header */}
+              {/* Cracked Wax Seal Header */}
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-300/80 pb-4 mb-6 pr-8">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-md shrink-0"
-                    style={{ backgroundColor: currentLetter.sealColor || '#b91c1c' }}
-                  >
-                    <Heart className="w-5 h-5 fill-white" />
+                  {/* Two-piece Cracked Wax Seal Emblem showing the broken seal */}
+                  <div className="relative w-11 h-11 flex items-center justify-center shrink-0">
+                    <div
+                      className="w-5 h-10 rounded-l-full flex items-center justify-end pr-0.5 text-white shadow-md -rotate-6 -translate-x-0.5"
+                      style={{
+                        backgroundColor: currentLetter.sealColor || '#b91c1c',
+                      }}
+                    >
+                      <Heart className="w-3.5 h-3.5 fill-white" />
+                    </div>
+                    <div
+                      className="w-5 h-10 rounded-r-full flex items-center justify-start pl-0.5 text-white shadow-md rotate-6 translate-x-0.5"
+                      style={{
+                        backgroundColor: currentLetter.sealColor || '#b91c1c',
+                      }}
+                    >
+                      <Heart className="w-3.5 h-3.5 fill-white" />
+                    </div>
                   </div>
                   <div>
-                    <span className="text-xs uppercase tracking-wider text-stone-500 font-sans">
-                      Handwritten For {girlfriendName}
+                    <span className="text-xs uppercase tracking-wider text-rose-800 font-semibold">
+                      Wax Seal Broken · Unfolded For {girlfriendName}
                     </span>
                     <h4 className="font-serif text-lg font-bold text-stone-900 heading-3d">
                       {currentLetter.title}
@@ -606,8 +742,17 @@ export const LoveLettersSection: React.FC<LoveLettersSectionProps> = ({
                   </div>
                 </div>
 
-                {/* Quick in-modal controls: Upload real handwritten photo OR switch pen style */}
+                {/* Quick in-modal controls: Replay 3D Wax Seal Break OR Upload real handwritten photo */}
                 <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => handleReplayWaxBreakAndUnfold(e, currentLetter)}
+                    className="px-2.5 py-1.5 text-xs font-medium bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 rounded-lg inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Replay Wax Break</span>
+                  </button>
+
                   <label className="px-3 py-1.5 text-xs font-medium bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 rounded-lg inline-flex items-center gap-1.5 cursor-pointer tile-3d-extruded">
                     <Camera className="w-3.5 h-3.5 text-rose-700" />
                     <span>

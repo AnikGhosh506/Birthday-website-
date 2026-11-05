@@ -13,6 +13,7 @@ import {
   Layers,
   Type,
   Award,
+  Sparkles,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { romanticAudio } from '../utils/audioSynth';
@@ -31,6 +32,8 @@ interface BirthdayGameArcadeProps {
   boyfriendName: string;
   onUnlockBonusCoupon?: () => void;
   bonusUnlocked?: boolean;
+  isConfettiRainEnabled?: boolean;
+  onToggleConfettiRain?: () => void;
 }
 
 // ==========================================
@@ -174,6 +177,8 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
   boyfriendName,
   onUnlockBonusCoupon,
   bonusUnlocked = false,
+  isConfettiRainEnabled = false,
+  onToggleConfettiRain,
 }) => {
   const [activeMode, setActiveMode] = useState<GameMode>('STARLIGHT_CATCHER');
 
@@ -1048,58 +1053,188 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
   return (
     <section id="arcade" className="py-20 border-b border-stone-200/80 bg-[#f6f1eb]">
       <div className="max-w-6xl mx-auto px-6">
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-rose-800 uppercase tracking-widest mb-2">
-              <span>Interactive 3D Keepsake Arcade</span>
-              <span aria-hidden="true">·</span>
-              <span>3 Playable 3D Mini-Games</span>
+        {/* Section Header — Balanced 12-Column Grid filling both Left & Right sides */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch mb-8">
+          {/* Left Column: Title, Description & Live Mini-Game Record Strip */}
+          <div className="lg:col-span-6 flex flex-col justify-between bg-white/75 backdrop-blur-xs border border-stone-200/90 rounded-2xl p-6 shadow-xs">
+            <div>
+              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-rose-800 uppercase tracking-widest mb-2.5">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-100/90 text-rose-900 border border-rose-200">
+                  <Sparkles className="w-3.5 h-3.5 text-rose-700" />
+                  Interactive 3D Keepsake Arcade
+                </span>
+                <span aria-hidden="true">·</span>
+                <span>3 Playable 3D Mini-Games</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900 heading-3d leading-tight">
+                The 3D Birthday Game Lounge for {girlfriendName}
+              </h2>
+              <p className="mt-2.5 text-sm sm:text-base text-stone-600 leading-relaxed">
+                Catch 3D birthday collectibles in a real-time Three.js WebGL arena, flip 3D keepsake cards, or press tactile 3D letter blocks to unlock a secret golden birthday voucher.
+              </p>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-stone-900 text-balance heading-3d">
-              The 3D Birthday Game Lounge for {girlfriendName}
-            </h2>
-            <p className="mt-2 text-sm sm:text-base text-stone-600 max-w-2xl">
-              Catch 3D birthday collectibles in a real-time Three.js WebGL arena, flip 3D keepsake cards, or press tactile 3D letter blocks to unlock a secret golden birthday voucher.
-            </p>
+
+            {/* Live Mini-Game Record Strip anchoring the bottom of the left card */}
+            <div className="mt-5 pt-4 border-t border-stone-200/80 grid grid-cols-3 gap-2.5">
+              <div className="rounded-xl bg-stone-50/90 border border-stone-200/80 px-3 py-2">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
+                  3D Catcher Best
+                </div>
+                <div className="text-sm font-mono font-bold text-stone-900 mt-0.5 tabular-nums">
+                  {highScore} pts
+                </div>
+              </div>
+              <div className="rounded-xl bg-stone-50/90 border border-stone-200/80 px-3 py-2">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
+                  Memory Flip Best
+                </div>
+                <div className="text-sm font-mono font-bold text-stone-900 mt-0.5 tabular-nums">
+                  {memoryBestMoves ? `${memoryBestMoves} moves` : 'Ready'}
+                </div>
+              </div>
+              <div className="rounded-xl bg-stone-50/90 border border-stone-200/80 px-3 py-2">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
+                  3D Words Solved
+                </div>
+                <div className="text-sm font-mono font-bold text-stone-900 mt-0.5 tabular-nums">
+                  {solvedCount} {solvedCount === 1 ? 'word' : 'words'}
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Total Arcade Score & Bonus Unlock Progress */}
-          <div className="bg-white border border-stone-200/90 rounded-xl p-4 flex items-center gap-4 shadow-xs shrink-0 card-3d-tilt">
-            <div className="w-10 h-10 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
-              <Trophy className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xs text-stone-500 font-medium">
-                Total Arcade Score · <span className="font-mono tabular-nums font-semibold text-stone-900">{totalArcadePoints} pts</span>
+          {/* Right Column: Fills the right side with Golden Voucher Progress + Confetti Rain Control */}
+          <div className="lg:col-span-6 flex flex-col justify-between gap-4">
+            {/* Card 1: Total Arcade Score & Golden Birthday Prize Progress */}
+            <div className="bg-white border border-stone-200/90 rounded-2xl p-5 shadow-xs flex-1 flex flex-col justify-between card-3d-tilt">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/80 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0 shadow-2xs">
+                    <Trophy className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
+                        Golden Prize Vault
+                      </span>
+                      <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-amber-100 text-amber-900 border border-amber-200">
+                        {Math.min(100, Math.round((totalArcadePoints / 300) * 100))}% Unlocked
+                      </span>
+                    </div>
+                    <div className="text-lg font-serif font-bold text-stone-900 mt-0.5">
+                      Total Arcade Score:{' '}
+                      <span className="font-mono tabular-nums text-rose-700">{totalArcadePoints} pts</span>
+                    </div>
+                  </div>
+                </div>
+
+                {totalArcadePoints >= 300 && onUnlockBonusCoupon && !bonusUnlocked && (
+                  <button
+                    onClick={() => {
+                      romanticAudio.playCelebrationChime();
+                      confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
+                      onUnlockBonusCoupon();
+                    }}
+                    className="px-3.5 py-2 text-xs font-semibold bg-rose-700 text-white rounded-lg hover:bg-rose-800 transition-colors cursor-pointer whitespace-nowrap btn-3d-rose shadow-xs"
+                  >
+                    Claim Bonus Voucher
+                  </button>
+                )}
               </div>
-              {totalArcadePoints >= 300 ? (
-                <div className="mt-1 flex items-center gap-2">
-                  <span className="text-xs font-semibold text-emerald-700">
-                    ★ Golden Birthday Prize Ready!
+
+              {/* Progress Bar toward 300 pts */}
+              <div className="mt-4">
+                <div className="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden border border-stone-200/70">
+                  <div
+                    className="h-full bg-gradient-to-r from-rose-600 via-amber-500 to-emerald-500 transition-all duration-500 rounded-full"
+                    style={{ width: `${Math.min(100, (totalArcadePoints / 300) * 100)}%` }}
+                  />
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs text-stone-500">
+                  {totalArcadePoints >= 300 ? (
+                    <span className="font-semibold text-emerald-700">
+                      ★ Secret Golden Birthday Prize Unlocked! {bonusUnlocked ? '(Added to Vouchers)' : ''}
+                    </span>
+                  ) : (
+                    <span>
+                      Earn <span className="font-semibold text-rose-700 tabular-nums">{Math.max(0, 300 - totalArcadePoints)} more pts</span> across any 3D game to unlock the Golden Voucher
+                    </span>
+                  )}
+                  <span className="font-mono text-[11px] font-semibold text-stone-700 tabular-nums">
+                    {totalArcadePoints} / 300 PTS
                   </span>
-                  {onUnlockBonusCoupon && !bonusUnlocked && (
-                    <button
-                      onClick={() => {
-                        romanticAudio.playCelebrationChime();
-                        confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
-                        onUnlockBonusCoupon();
-                      }}
-                      className="px-2.5 py-1 text-xs font-medium bg-rose-700 text-white rounded-md hover:bg-rose-800 transition-colors cursor-pointer whitespace-nowrap btn-3d-rose"
-                    >
-                      Claim Bonus Voucher
-                    </button>
-                  )}
-                  {bonusUnlocked && (
-                    <span className="text-xs text-stone-500">Added to Vouchers</span>
-                  )}
                 </div>
-              ) : (
-                <div className="text-xs text-stone-500 mt-0.5 tabular-nums">
-                  Earn <span className="font-semibold text-rose-700">{Math.max(0, 300 - totalArcadePoints)} more pts</span> to unlock a Secret Golden Voucher
-                </div>
-              )}
+              </div>
             </div>
+
+            {/* Card 2: User-Controlled Persistent Confetti Rain Toggle */}
+            {onToggleConfettiRain && (
+              <div
+                className={`rounded-2xl p-5 border flex items-center justify-between gap-4 transition-all card-3d-tilt ${
+                  isConfettiRainEnabled
+                    ? 'bg-gradient-to-br from-rose-50 via-amber-50/70 to-white border-rose-300 shadow-sm'
+                    : 'bg-white border-stone-200/90 shadow-xs'
+                }`}
+              >
+                <div className="flex items-center gap-3.5">
+                  <div
+                    className={`w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 transition-colors ${
+                      isConfettiRainEnabled
+                        ? 'bg-rose-600 text-white border-rose-700 shadow-xs'
+                        : 'bg-stone-100 text-stone-500 border-stone-200'
+                    }`}
+                  >
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-serif font-bold text-stone-900">
+                        Page-Wide Confetti Rain
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full ${
+                          isConfettiRainEnabled
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-stone-100 text-stone-500 border border-stone-200'
+                        }`}
+                      >
+                        {isConfettiRainEnabled ? 'Active' : 'Paused'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-stone-500 mt-0.5">
+                      {isConfettiRainEnabled
+                        ? 'Festive birthday confetti is gently raining across the entire keepsake page'
+                        : 'Switch on for continuous celebratory confetti across every section'}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isConfettiRainEnabled}
+                  aria-label="Toggle persistent confetti rain across the entire page"
+                  onClick={() => {
+                    if (!isConfettiRainEnabled) {
+                      romanticAudio.playCelebrationChime();
+                      confetti({ particleCount: 35, spread: 65, origin: { y: 0.65 } });
+                    } else {
+                      romanticAudio.playSoftClick();
+                    }
+                    onToggleConfettiRain();
+                  }}
+                  className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    isConfettiRainEnabled ? 'bg-rose-600' : 'bg-stone-300'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                      isConfettiRainEnabled ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1152,7 +1287,7 @@ export const BirthdayGameArcade: React.FC<BirthdayGameArcadeProps> = ({
             </button>
           </div>
 
-          <div className="text-xs text-stone-500">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-stone-500">
             <span>Controls: Mouse, Touch, or Keyboard</span>
             <span aria-hidden="true"> · </span>
             <span>Three.js WebGL 3D Engine</span>
